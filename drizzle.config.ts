@@ -3,9 +3,12 @@ import type { Config } from 'drizzle-kit';
 export default {
   schema: './src/db/schema.ts',
   out: './drizzle',
-  driver: 'turso',
+  dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
-    authToken: process.env.DATABASE_AUTH_TOKEN,
+    host: 'aws-0-eu-central-1.pooler.supabase.com',
+    port: 6543,
+    user: 'postgres.gloatjdytjubmfkeyjgl',
+    password: 'blQ3VT0NVcz54YV7',
+    database: 'postgres',
   },
 } satisfies Config; 

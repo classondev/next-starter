@@ -16,6 +16,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import type { Product } from "@/db/schema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const productSchema = z.object({
   articleNumber: z.string().min(1, "Article number is required"),
@@ -44,24 +51,40 @@ export function ProductForm({ initialData, onSubmit }: ProductFormProps) {
   const { toast } = useToast();
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: initialData || {
-      articleNumber: "",
-      name: "",
-      description: "",
-      note: "",
-      itemsQuantity: 0,
-      boxQuantity: 0,
-      stockNote: "",
-      itemsPerBox: 1,
-      priceNet: 0,
-      priceGross: 0,
-      tax: 0,
-      status: "active",
-      category: "",
-    },
+    defaultValues: initialData
+      ? {
+          articleNumber: initialData.articleNumber,
+          name: initialData.name,
+          description: initialData.description ?? "",
+          note: initialData.note ?? "",
+          itemsQuantity: initialData.itemsQuantity ?? 0,
+          boxQuantity: initialData.boxQuantity ?? 0,
+          stockNote: initialData.stockNote ?? "",
+          itemsPerBox: initialData.itemsPerBox ?? 1,
+          priceNet: Number(initialData.priceNet),
+          priceGross: Number(initialData.priceGross),
+          tax: Number(initialData.tax),
+          status: initialData.status ?? "active",
+          category: initialData.category ?? "",
+        }
+      : {
+          articleNumber: "",
+          name: "",
+          description: "",
+          note: "",
+          itemsQuantity: 0,
+          boxQuantity: 0,
+          stockNote: "",
+          itemsPerBox: 1,
+          priceNet: 0,
+          priceGross: 0,
+          tax: 0,
+          status: "active",
+          category: "",
+        },
   });
 
-  const handleSubmit = async (data: ProductFormValues) => {
+  const onFormSubmit = async (data: ProductFormValues) => {
     try {
       await onSubmit(data);
       toast({
@@ -79,7 +102,7 @@ export function ProductForm({ initialData, onSubmit }: ProductFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="articleNumber"
@@ -217,13 +240,19 @@ export function ProductForm({ initialData, onSubmit }: ProductFormProps) {
             <FormItem>
               <FormLabel>Status</FormLabel>
               <FormControl>
-                <select
-                  {...field}
-                  className="w-full p-2 border rounded-md"
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
                 >
-                  <option value="active">Active</option>
-                  <option value="disabled">Disabled</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="disabled">Disabled</SelectItem>
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
