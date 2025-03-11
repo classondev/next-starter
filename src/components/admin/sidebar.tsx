@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Settings,
   Users,
+  Package,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -23,6 +24,11 @@ const navigation = [
     name: "Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
+  },
+  {
+    name: "Products",
+    href: "/admin/products",
+    icon: Package,
   },
   {
     name: "Analytics",
@@ -65,7 +71,7 @@ export function AdminSidebar({ open, onOpenChange }: AdminSidebarProps) {
           )}
         >
           <LayoutDashboard className="h-6 w-6" />
-          {open && <span>Admin Panel</span>}
+          {open && <span>{process.env.NEXT_PUBLIC_APP_NAME || 'Store'}</span>}
         </Link>
       </div>
       <nav className="flex-1 space-y-1 p-2">

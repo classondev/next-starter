@@ -1,0 +1,55 @@
+{
+  "products": [
+    {
+      "articleNumber": "03991",
+      "itemsQuantity": 0,
+      "name": "Gạo con hổ",
+      "description": " Jasmin Reis campuchia 3A-18 Kg-Gạo con hổ",
+      "priceGross": "28.00",
+      "priceNet": "23.53",
+      "tax": "19",
+      "status": "active"
+    },
+    {
+      "articleNumber": "11256",
+      "itemsQuantity": 0,
+      "name": "Nước uống Litchi Drinho 250ml",
+      "description": "Drinks Litschi Drinho 250ml",
+      "priceGross": "14.50",
+      "priceNet": "12.18",
+      "tax": "19",
+      "status": "active"
+    },
+    {
+      "articleNumber": "158",
+      "itemsQuantity": 34,
+      "name": "Xì dầu loãng LEE KUM KEE hell -8Lx 2Stk/Kt ",
+      "description": "Sojasauce LEE KUM KEE hell-8L x 2Stk/Kt",
+      "priceGross": "17.00",
+      "priceNet": "14.29",
+      "tax": "19",
+      "status": "active"
+    },
+    {
+      "articleNumber": "167",
+      "itemsQuantity": 7,
+      "name": "Há cảo Gyoza 10Pk/Kt",
+      "description": "Dumpling mit Hühnchen Gyoza 600g / 10Pk/Kt",
+      "priceGross": "1.15",
+      "priceNet": "0.97",
+      "tax": "19",
+      "status": "active"
+    },
+    {
+      "articleNumber": "18",
+      "itemsQuantity": 0,
+      "name": "Tấm thảm tre cuon sushi",
+      "description": "Sushi-Bambusmatte ",
+      "priceGross": "0.75",
+      "priceNet": "0.63",
+      "tax": "19",
+      "status": "active"
+    }
+  ],
+  "mode": "skip"
+}

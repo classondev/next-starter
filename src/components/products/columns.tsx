@@ -6,14 +6,17 @@ export const columns: ColumnDef<Product>[] = [
   {
     accessorKey: "articleNumber",
     header: "Article #",
+    enableColumnFilter: true,
   },
   {
     accessorKey: "name",
     header: "Name",
+    enableColumnFilter: true,
   },
   {
     accessorKey: "category",
     header: "Category",
+    enableColumnFilter: true,
   },
   {
     accessorKey: "itemsQuantity",

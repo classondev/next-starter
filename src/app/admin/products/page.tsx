@@ -24,9 +24,14 @@ import { Product } from "@/db/schema";
 import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/products/products-table";
 import { columns } from "@/components/products/columns";
+import { ImportModal } from "@/components/products/ImportModal";
 
-async function getProducts() {
-  const response = await fetch("/api/products");
+async function getProducts(query?: string) {
+  const url = new URL("/api/products", window.location.origin);
+  if (query) {
+    url.searchParams.append("query", query);
+  }
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error("Failed to fetch products");
   }
@@ -34,9 +39,12 @@ async function getProducts() {
 }
 
 export default function ProductsPage() {
-  const { data: products = [], isLoading } = useQuery({
-    queryKey: ["products"],
-    queryFn: getProducts,
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const { data: products = [], isLoading, refetch } = useQuery({
+    queryKey: ["products", searchQuery],
+    queryFn: () => getProducts(searchQuery),
   });
 
   if (isLoading) {
@@ -52,10 +60,30 @@ export default function ProductsPage() {
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Products</h1>
-        <Button>Add Product</Button>
+        <h1 className="text-3xl font-bold">Products</h1>
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            onClick={() => setImportModalOpen(true)}
+          >
+            Import Products
+          </Button>
+          <Button>Add Product</Button>
+        </div>
       </div>
-      <DataTable columns={columns} data={products} />
+      
+      <DataTable 
+        columns={columns} 
+        data={products} 
+      />
+      
+      <ImportModal
+        open={importModalOpen}
+        onOpenChange={setImportModalOpen}
+        onImportComplete={() => {
+          refetch();
+        }}
+      />
     </div>
   );
 } 
