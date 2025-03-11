@@ -7,7 +7,8 @@ import {
   decimal, 
   timestamp, 
   pgEnum,
-  pgTable 
+  pgTable,
+  foreignKey 
 } from "drizzle-orm/pg-core";
 
 // Define the product status enum
@@ -35,6 +36,33 @@ export const products = pgTable('products', {
   modifiedBy: varchar('modified_by', { length: 100 }),
 });
 
-// Define TypeScript type for Product
+// Define the orders table
+export const orders = pgTable('orders', {
+  id: serial('id').primaryKey(),
+  code: varchar('code', { length: 50 }).notNull().unique(),
+  customerId: varchar('customer_id', { length: 100 }).notNull(),
+  note: text('note'),
+  createdAt: timestamp('created_at').defaultNow(),
+  createdBy: varchar('created_by', { length: 100 }),
+});
+
+// Define the order items table
+export const orderItems = pgTable('order_items', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
+  productId: integer('product_id').notNull().references(() => products.id),
+  quantity: integer('quantity').notNull(),
+  unit: varchar('unit', { length: 20 }).notNull(),
+  priceNet: decimal('price_net', { precision: 10, scale: 2 }).notNull(),
+  tax: decimal('tax', { precision: 5, scale: 2 }).notNull(),
+});
+
+// Define TypeScript types
 export type Product = typeof products.$inferSelect;
-export type NewProduct = typeof products.$inferInsert; 
+export type NewProduct = typeof products.$inferInsert;
+
+export type Order = typeof orders.$inferSelect;
+export type NewOrder = typeof orders.$inferInsert;
+
+export type OrderItem = typeof orderItems.$inferSelect;
+export type NewOrderItem = typeof orderItems.$inferInsert; 

@@ -1,12 +1,22 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Product } from "@/db/schema";
 import { formatCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export const columns: ColumnDef<Product>[] = [
   {
     accessorKey: "articleNumber",
     header: "Article #",
-    enableColumnFilter: true,
+    cell: ({ row }) => {
+      return (
+        <Button variant="link" asChild>
+          <Link href={`/admin/products/${row.original.id}`}>
+            {row.getValue("articleNumber")}
+          </Link>
+        </Button>
+      );
+    },
   },
   {
     accessorKey: "name",
