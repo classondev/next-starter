@@ -3,7 +3,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
-import { products } from "@/db/schema";
+import { products, type NewProduct } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createProduct } from "@/services/products";
 
@@ -12,9 +12,9 @@ const importProductSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   itemsQuantity: z.number(),
-  priceGross: z.string(),
-  priceNet: z.string(),
-  tax: z.string(),
+  priceGross: z.number().positive(),
+  priceNet: z.number().positive(),
+  tax: z.number().min(0).max(100),
   status: z.enum(['active', 'disabled']).default('active'),
 });
 
@@ -45,13 +45,21 @@ async function processProduct(product: z.infer<typeof importProductSchema>, mode
 
     const exists = existingProduct.length > 0;
 
+    // Convert product data to match NewProduct type
+    const productData: NewProduct = {
+      ...product,
+      priceNet: product.priceNet.toString(),
+      priceGross: product.priceGross.toString(),
+      tax: product.tax.toString(),
+    };
+
     if (exists) {
       switch (mode) {
         case 'override':
           await db
             .update(products)
             .set({
-              ...product,
+              ...productData,
               modifiedAt: new Date(),
             })
             .where(eq(products.articleNumber, product.articleNumber));
@@ -60,7 +68,7 @@ async function processProduct(product: z.infer<typeof importProductSchema>, mode
           return { success: true, articleNumber: product.articleNumber, skipped: true };
         case 'add':
           await createProduct({
-            ...product,
+            ...productData,
             articleNumber: `${product.articleNumber}-${Date.now()}`,
           });
           return { success: true, articleNumber: product.articleNumber };
@@ -72,7 +80,7 @@ async function processProduct(product: z.infer<typeof importProductSchema>, mode
           };
       }
     } else {
-      await createProduct(product);
+      await createProduct(productData);
       return { success: true, articleNumber: product.articleNumber };
     }
   } catch (error) {
