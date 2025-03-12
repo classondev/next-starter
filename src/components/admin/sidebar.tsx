@@ -9,6 +9,7 @@ import {
   Settings,
   Users,
   Package,
+  ShoppingCart,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -29,6 +30,11 @@ const navigation = [
     name: "Products",
     href: "/admin/products",
     icon: Package,
+  },
+  {
+    name: "Orders",
+    href: "/admin/orders",
+    icon: ShoppingCart,
   },
   {
     name: "Analytics",
