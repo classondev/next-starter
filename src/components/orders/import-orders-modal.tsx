@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -110,6 +110,7 @@ export function ImportOrdersModal({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [groupedItems, setGroupedItems] = useState<Record<string, GroupedItem>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Update groupedItems when filePreviews changes
@@ -269,6 +270,10 @@ export function ImportOrdersModal({
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     setFilePreviews(prev => prev.filter((_, i) => i !== index));
+    // Reset file input value
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleImport = async () => {
@@ -349,6 +354,7 @@ export function ImportOrdersModal({
         <div className="flex flex-col gap-4 flex-1 overflow-hidden">
           <div className="flex items-center gap-4">
             <Input
+              ref={fileInputRef}
               type="file"
               onChange={handleFileSelect}
               accept=".xlsx,.xls"
