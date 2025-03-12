@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getOrders, createOrder } from "@/services/orders";
 import { db } from '@/db';
 import { orders, orderItems, products } from '@/db/schema';
-import { desc, eq, inArray } from 'drizzle-orm';
+import { desc, eq, inArray, or, ilike } from 'drizzle-orm';
 
 // Schema for validating order items
 const orderItemSchema = z.object({
@@ -42,12 +42,26 @@ const importOrderSchema = z.object({
   items: z.array(importOrderItemSchema),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const data = await db
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('query');
+
+    let queryBuilder = db
       .select()
-      .from(orders)
-      .orderBy(desc(orders.createdAt));
+      .from(orders);
+
+    if (query) {
+      queryBuilder = queryBuilder.where(
+        or(
+          ilike(orders.code, `%${query}%`),
+          ilike(orders.customerId, `%${query}%`),
+          ilike(orders.createdBy, `%${query}%`)
+        )
+      );
+    }
+
+    const data = await queryBuilder.orderBy(desc(orders.createdAt));
 
     return NextResponse.json(data);
   } catch (error) {
