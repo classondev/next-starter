@@ -1,7 +1,7 @@
 "use client"
 
 import { Menu, Moon, Sun } from "lucide-react"
-
+import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,6 +19,9 @@ interface AdminHeaderProps {
 
 export function AdminHeader({ open, onOpenChange }: AdminHeaderProps) {
   const { theme, setTheme } = useTheme()
+  const pathname = usePathname()
+  const currentRoute = pathname.split('/').filter(Boolean).pop() || 'admin'
+  const formattedRoute = currentRoute.charAt(0).toUpperCase() + currentRoute.slice(1)
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6">
@@ -33,7 +36,7 @@ export function AdminHeader({ open, onOpenChange }: AdminHeaderProps) {
       </Button>
       <div className="flex flex-1 items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="font-semibold">Admin Panel</h1>
+          <h1 className="font-semibold">{formattedRoute}</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button

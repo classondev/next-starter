@@ -25,6 +25,7 @@ import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { DataTable } from "@/components/products/products-table";
 import { columns } from "@/components/products/columns";
 import { ImportModal } from "@/components/products/ImportModal";
+import { Input } from "@/components/ui/input";
 
 async function getProducts(query?: string): Promise<Product[]> {
   try {
@@ -85,22 +86,31 @@ export default function ProductsPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Products</h1>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => setImportModalOpen(true)}
-          >
-            Import Products
-          </Button>
-          <Button>Add Product</Button>
+      <div className="flex flex-col space-y-4 mb-6">
+        <div className="flex justify-between items-center">
+          <Input
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            className="w-[300px]"
+          />
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setImportModalOpen(true)}
+            >
+              Import Products
+            </Button>
+            <Button>Add Product</Button>
+          </div>
         </div>
       </div>
       
       <DataTable 
         columns={columns} 
-        data={products} 
+        data={products}
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
       />
       
       <ImportModal
