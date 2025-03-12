@@ -1,0 +1,45 @@
+{
+  "common": {
+    "search": "Search",
+    "actions": "Actions",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "loading": "Loading...",
+    "noData": "No data available",
+    "retry": "Try Again"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "user": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Log out"
+  },
+  "products": {
+    "title": "Products",
+    "searchPlaceholder": "Search products...",
+    "importProducts": "Import Products",
+    "newProduct": "New Product",
+    "noProducts": "No products found. Import some products to get started."
+  },
+  "orders": {
+    "title": "Orders",
+    "searchPlaceholder": "Search orders...",
+    "importOrders": "Import Orders",
+    "newOrder": "New Order",
+    "noOrders": "No orders found. Import some orders to get started.",
+    "code": "Code",
+    "customerId": "Customer ID",
+    "createdAt": "Created At",
+    "createdBy": "Created By"
+  }
+} 

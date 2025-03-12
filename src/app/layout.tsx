@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 import { Providers } from "./providers"
+import { LanguageProvider } from '@/i18n/LanguageProvider'
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -20,17 +21,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <main className="container px-2">{children}</main>
-            <Toaster />
-          </ThemeProvider>
-        </Providers>
+        <LanguageProvider>
+          <Providers>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <main className="container px-2">{children}</main>
+              <Toaster />
+            </ThemeProvider>
+          </Providers>
+        </LanguageProvider>
       </body>
     </html>
   )

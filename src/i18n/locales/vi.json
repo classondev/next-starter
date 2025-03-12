@@ -1,0 +1,40 @@
+{
+  "common": {
+    "search": "Tìm kiếm",
+    "actions": "Thao tác",
+    "view": "Xem",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "loading": "Đang tải...",
+    "noData": "Không có dữ liệu",
+    "retry": "Thử lại"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "language": "Ngôn ngữ",
+    "theme": "Giao diện",
+    "light": "Sáng",
+    "dark": "Tối",
+    "system": "Hệ thống"
+  },
+  "products": {
+    "title": "Sản phẩm",
+    "searchPlaceholder": "Tìm kiếm sản phẩm...",
+    "importProducts": "Nhập sản phẩm",
+    "newProduct": "Thêm sản phẩm",
+    "noProducts": "Không tìm thấy sản phẩm nào. Hãy nhập sản phẩm để bắt đầu."
+  },
+  "orders": {
+    "title": "Đơn hàng",
+    "searchPlaceholder": "Tìm kiếm đơn hàng...",
+    "importOrders": "Nhập đơn hàng",
+    "newOrder": "Tạo đơn hàng",
+    "noOrders": "Không tìm thấy đơn hàng nào. Hãy nhập đơn hàng để bắt đầu.",
+    "code": "Mã",
+    "customerId": "Mã khách hàng",
+    "createdAt": "Ngày tạo",
+    "createdBy": "Người tạo"
+  }
+} 

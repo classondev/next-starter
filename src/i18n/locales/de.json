@@ -1,0 +1,45 @@
+{
+  "common": {
+    "search": "Suchen",
+    "actions": "Aktionen",
+    "view": "Ansehen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "loading": "Laden...",
+    "noData": "Keine Daten verfügbar",
+    "retry": "Erneut versuchen"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "theme": "Design",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System"
+  },
+  "user": {
+    "profile": "Profil",
+    "settings": "Einstellungen",
+    "logout": "Abmelden"
+  },
+  "products": {
+    "title": "Produkte",
+    "searchPlaceholder": "Produkte suchen...",
+    "importProducts": "Produkte importieren",
+    "newProduct": "Neues Produkt",
+    "noProducts": "Keine Produkte gefunden. Importieren Sie Produkte, um zu beginnen."
+  },
+  "orders": {
+    "title": "Bestellungen",
+    "searchPlaceholder": "Bestellungen suchen...",
+    "importOrders": "Bestellungen importieren",
+    "newOrder": "Neue Bestellung",
+    "noOrders": "Keine Bestellungen gefunden. Importieren Sie Bestellungen, um zu beginnen.",
+    "code": "Code",
+    "customerId": "Kundennummer",
+    "createdAt": "Erstellt am",
+    "createdBy": "Erstellt von"
+  }
+} 
