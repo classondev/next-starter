@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOrderById, updateOrder, deleteOrder } from "@/services/orders";
+import { db } from '@/db';
+import { orders, orderItems, products } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 // Schema for validating order items
 const orderItemSchema = z.object({
@@ -26,19 +29,63 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  console.log('GET /api/orders/[id] - Start', { orderId: params.id });
+  
   try {
-    const order = await getOrderById(parseInt(params.id));
-    if (!order) {
+    const orderId = parseInt(params.id);
+    console.log('Parsed order ID:', orderId);
+
+    if (isNaN(orderId)) {
+      console.log('Invalid order ID:', params.id);
+      return NextResponse.json(
+        { error: 'Invalid order ID' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Fetching order from database...');
+    const order = await db.select().from(orders)
+      .where(eq(orders.id, orderId))
+      .leftJoin(
+        orderItems,
+        eq(orders.id, orderItems.orderId)
+      )
+      .leftJoin(
+        products,
+        eq(orderItems.productId, products.id)
+      );
+
+    console.log('Database query result:', JSON.stringify(order, null, 2));
+
+    if (!order || order.length === 0) {
+      console.log('Order not found:', orderId);
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       );
     }
-    return NextResponse.json(order);
+
+    // Transform the joined data into the expected format
+    const transformedOrder = {
+      ...order[0].orders,
+      items: order.map(row => ({
+        ...row.order_items,
+        product: row.products
+      })).filter(item => item.product !== null)
+    };
+
+    console.log('Transformed order:', JSON.stringify(transformedOrder, null, 2));
+    return NextResponse.json(transformedOrder);
   } catch (error) {
     console.error('Error fetching order:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+    }
     return NextResponse.json(
-      { error: 'Failed to fetch order' },
+      { error: 'Failed to fetch order', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -49,30 +96,33 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await request.json();
-    const { items, ...orderData } = orderSchema.parse(body);
     const orderId = parseInt(params.id);
+    if (isNaN(orderId)) {
+      return NextResponse.json(
+        { error: 'Invalid order ID' },
+        { status: 400 }
+      );
+    }
 
-    const order = await updateOrder(orderId, orderData, items.map(item => ({
-      ...item,
-      quantity: item.quantity.toString(),
-      quantity2: item.quantity2?.toString(),
-    })));
-    if (!order) {
+    const body = await request.json();
+    const order = await db
+      .update(orders)
+      .set({
+        ...body,
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderId))
+      .returning();
+
+    if (!order || order.length === 0) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       );
     }
-    return NextResponse.json(order);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      );
-    }
 
+    return NextResponse.json(order[0]);
+  } catch (error) {
     console.error('Error updating order:', error);
     return NextResponse.json(
       { error: 'Failed to update order' },
@@ -87,13 +137,31 @@ export async function DELETE(
 ) {
   try {
     const orderId = parseInt(params.id);
-    const success = await deleteOrder(orderId);
-    if (!success) {
+    if (isNaN(orderId)) {
+      return NextResponse.json(
+        { error: 'Invalid order ID' },
+        { status: 400 }
+      );
+    }
+
+    // First delete related order items
+    await db
+      .delete(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+
+    // Then delete the order
+    const result = await db
+      .delete(orders)
+      .where(eq(orders.id, orderId))
+      .returning();
+
+    if (!result || result.length === 0) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       );
     }
+
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error('Error deleting order:', error);

@@ -1,22 +1,80 @@
-import { notFound } from "next/navigation";
-import { getOrderById } from "@/services/orders";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+'use client';
 
-export default async function OrderDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const order = await getOrderById(parseInt(params.id));
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Order, OrderItem } from '@/db/schema';
 
-  if (!order) {
-    notFound();
+interface OrderWithItems extends Order {
+  items: (OrderItem & {
+    product: {
+      id: number;
+      name: string;
+      articleNumber: string;
+      status: string;
+    };
+  })[];
+}
+
+export default function OrderDetailsPage() {
+  const params = useParams();
+  const router = useRouter();
+  const [order, setOrder] = useState<OrderWithItems | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/orders/${params.id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch order');
+        }
+        const data = await response.json();
+        setOrder(data);
+      } catch (error) {
+        console.error('Error fetching order:', error);
+        setError('Failed to load order details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [params.id]);
+
+  if (isLoading) {
+    return <div className="container mx-auto py-10">Loading...</div>;
+  }
+
+  if (error || !order) {
+    return (
+      <div className="container mx-auto py-10">
+        <div className="text-red-500">{error || 'Order not found'}</div>
+        <Button
+          className="mt-4"
+          variant="outline"
+          onClick={() => router.push('/admin/orders')}
+        >
+          Back to Orders
+        </Button>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Order Details</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Order Details</h1>
+        <Button
+          variant="outline"
+          onClick={() => router.push('/admin/orders')}
+        >
+          Back to Orders
+        </Button>
+      </div>
 
       <div className="grid gap-6">
         <Card>
@@ -26,24 +84,24 @@ export default async function OrderDetailPage({
           <CardContent>
             <dl className="grid grid-cols-2 gap-4">
               <div>
-                <dt className="font-medium">Order Code</dt>
+                <dt className="font-medium text-gray-500">Order Code</dt>
                 <dd>{order.code}</dd>
               </div>
               <div>
-                <dt className="font-medium">Customer ID</dt>
+                <dt className="font-medium text-gray-500">Customer ID</dt>
                 <dd>{order.customerId}</dd>
               </div>
               <div>
-                <dt className="font-medium">Created At</dt>
-                <dd>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}</dd>
+                <dt className="font-medium text-gray-500">Created At</dt>
+                <dd>{order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A'}</dd>
               </div>
               <div>
-                <dt className="font-medium">Created By</dt>
-                <dd>{order.createdBy || "-"}</dd>
+                <dt className="font-medium text-gray-500">Created By</dt>
+                <dd>{order.createdBy}</dd>
               </div>
               {order.note && (
                 <div className="col-span-2">
-                  <dt className="font-medium">Note</dt>
+                  <dt className="font-medium text-gray-500">Note</dt>
                   <dd>{order.note}</dd>
                 </div>
               )}
@@ -56,40 +114,32 @@ export default async function OrderDetailPage({
             <CardTitle>Order Items</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product ID</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Unit</TableHead>
-                  <TableHead>Price Net</TableHead>
-                  <TableHead>Tax</TableHead>
-                  <TableHead>Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {order.items.map((item) => {
-                  const priceNet = parseFloat(item.priceNet);
-                  const tax = parseFloat(item.tax);
-                  const total = priceNet * (1 + tax / 100) * Number(item.quantity2 || item.quantity);
-
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.productId}</TableCell>
-                      <TableCell>{item.articleNumber}</TableCell>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>{item.unit}</TableCell>
-                      <TableCell>{item.quantity2}</TableCell>
-                      <TableCell>{item.unit2}</TableCell>
-                      <TableCell>${priceNet.toFixed(2)}</TableCell>
-                      <TableCell>{tax}%</TableCell>
-                      <TableCell>${total.toFixed(2)}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <div className="rounded-md border">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="p-4 text-left font-medium">Article Number</th>
+                    <th className="p-4 text-left font-medium">Product Name</th>
+                    <th className="p-4 text-left font-medium">Quantity</th>
+                    <th className="p-4 text-left font-medium">Unit</th>
+                    <th className="p-4 text-left font-medium">Price (Net)</th>
+                    <th className="p-4 text-left font-medium">Tax (%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items.map((item) => (
+                    <tr key={item.id} className="border-b">
+                      <td className="p-4">{item.product.articleNumber}</td>
+                      <td className="p-4">{item.product.name}</td>
+                      <td className="p-4">{item.quantity}</td>
+                      <td className="p-4">{item.unit}</td>
+                      <td className="p-4">{item.priceNet}</td>
+                      <td className="p-4">{item.tax}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </div>

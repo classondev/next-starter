@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ImportOrdersModal } from '@/components/orders/import-orders-modal';
 import { Order } from '@/db/schema';
+import Link from 'next/link';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -37,9 +38,14 @@ export default function OrdersPage() {
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Orders</h1>
-        <Button onClick={() => setIsImportModalOpen(true)}>
-          Import Orders
-        </Button>
+        <div className="space-x-4">
+          <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+            Import Orders
+          </Button>
+          <Button asChild>
+            <Link href="/admin/orders/new">New Order</Link>
+          </Button>
+        </div>
       </div>
 
       <ImportOrdersModal
@@ -64,6 +70,7 @@ export default function OrdersPage() {
                   <th className="p-4 text-left font-medium">Customer ID</th>
                   <th className="p-4 text-left font-medium">Created At</th>
                   <th className="p-4 text-left font-medium">Created By</th>
+                  <th className="p-4 text-left font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -73,6 +80,13 @@ export default function OrdersPage() {
                     <td className="p-4">{order.customerId}</td>
                     <td className="p-4">{formatDate(order.createdAt)}</td>
                     <td className="p-4">{order.createdBy}</td>
+                    <td className="p-4">
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/admin/orders/${order.id}`}>View</Link>
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
