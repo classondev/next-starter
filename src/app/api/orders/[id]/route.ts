@@ -7,6 +7,8 @@ const orderItemSchema = z.object({
   productId: z.number().int().positive(),
   quantity: z.number().int().positive(),
   unit: z.string().min(1),
+  quantity2: z.number().int(),
+  unit2: z.string(),
   priceNet: z.number().positive().transform(val => val.toString()),
   tax: z.number().min(0).max(100).transform(val => val.toString()),
 });
@@ -51,7 +53,11 @@ export async function PUT(
     const { items, ...orderData } = orderSchema.parse(body);
     const orderId = parseInt(params.id);
 
-    const order = await updateOrder(orderId, orderData, items);
+    const order = await updateOrder(orderId, orderData, items.map(item => ({
+      ...item,
+      quantity: item.quantity.toString(),
+      quantity2: item.quantity2?.toString(),
+    })));
     if (!order) {
       return NextResponse.json(
         { error: 'Order not found' },

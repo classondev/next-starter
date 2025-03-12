@@ -11,8 +11,13 @@ import { Order, OrderItem } from "@/db/schema";
 
 const orderItemSchema = z.object({
   productId: z.number().int().positive(),
+  position: z.number().int().optional(),
+  articleNumber: z.string().optional(),
+  description: z.string().optional(),
   quantity: z.number().int().positive(),
+  quantity2: z.number().optional(),
   unit: z.string().min(1),
+  unit2: z.string().optional(),
   priceNet: z.number().positive(),
   tax: z.number().min(0).max(100),
 });
@@ -41,9 +46,14 @@ export function OrderForm({ initialData, onSubmit }: OrderFormProps) {
       customerId: initialData.customerId,
       note: initialData.note || "",
       items: initialData.items.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
+        productId: item.productId || 0,
+        position: item.position || undefined,
+        articleNumber: item.articleNumber || undefined,
+        description: item.description || undefined,
+        quantity: parseInt(item.quantity) || 0,
+        quantity2: item.quantity2 ? parseFloat(item.quantity2) : undefined,
         unit: item.unit,
+        unit2: item.unit2 || undefined,
         priceNet: parseFloat(item.priceNet),
         tax: parseFloat(item.tax),
       })),
@@ -51,7 +61,18 @@ export function OrderForm({ initialData, onSubmit }: OrderFormProps) {
       code: "",
       customerId: "",
       note: "",
-      items: [{ productId: 0, quantity: 1, unit: "pcs", priceNet: 0, tax: 0 }],
+      items: [{ 
+        productId: 0, 
+        quantity: 1, 
+        unit: "pcs", 
+        priceNet: 0, 
+        tax: 0,
+        position: undefined,
+        articleNumber: undefined,
+        description: undefined,
+        quantity2: undefined,
+        unit2: undefined
+      }],
     },
   });
 

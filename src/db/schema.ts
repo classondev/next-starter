@@ -8,7 +8,8 @@ import {
   timestamp, 
   pgEnum,
   pgTable,
-  foreignKey 
+  foreignKey,
+  numeric
 } from "drizzle-orm/pg-core";
 
 // Define the product status enum
@@ -39,22 +40,27 @@ export const products = pgTable('products', {
 // Define the orders table
 export const orders = pgTable('orders', {
   id: serial('id').primaryKey(),
-  code: varchar('code', { length: 50 }).notNull().unique(),
-  customerId: varchar('customer_id', { length: 100 }).notNull(),
-  note: text('note'),
+  code: text('code').notNull(),
+  customerId: text('customer_id').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
-  createdBy: varchar('created_by', { length: 100 }),
+  createdBy: text('created_by'),
+  note: text('note'),
 });
 
 // Define the order items table
 export const orderItems = pgTable('order_items', {
   id: serial('id').primaryKey(),
-  orderId: integer('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
-  productId: integer('product_id').notNull().references(() => products.id),
-  quantity: integer('quantity').notNull(),
-  unit: varchar('unit', { length: 20 }).notNull(),
-  priceNet: decimal('price_net', { precision: 10, scale: 2 }).notNull(),
-  tax: decimal('tax', { precision: 5, scale: 2 }).notNull(),
+  orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }).notNull(),
+  productId: integer('product_id').references(() => products.id),
+  position: integer('position'),
+  articleNumber: varchar('article_number', { length: 50 }),
+  description: text('description'),
+  quantity: numeric('quantity').notNull(),
+  quantity2: numeric('quantity2'),
+  unit: text('unit').notNull(),
+  unit2: text('unit2'),
+  priceNet: numeric('price_net', { precision: 10, scale: 2 }).notNull(),
+  tax: numeric('tax', { precision: 5, scale: 2 }).notNull(),
 });
 
 // Define TypeScript types

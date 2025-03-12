@@ -71,13 +71,17 @@ export default async function OrderDetailPage({
                 {order.items.map((item) => {
                   const priceNet = parseFloat(item.priceNet);
                   const tax = parseFloat(item.tax);
-                  const total = priceNet * (1 + tax / 100) * item.quantity;
+                  const total = priceNet * (1 + tax / 100) * Number(item.quantity2 || item.quantity);
 
                   return (
                     <TableRow key={item.id}>
                       <TableCell>{item.productId}</TableCell>
+                      <TableCell>{item.articleNumber}</TableCell>
+                      <TableCell>{item.description}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
                       <TableCell>{item.unit}</TableCell>
+                      <TableCell>{item.quantity2}</TableCell>
+                      <TableCell>{item.unit2}</TableCell>
                       <TableCell>${priceNet.toFixed(2)}</TableCell>
                       <TableCell>{tax}%</TableCell>
                       <TableCell>${total.toFixed(2)}</TableCell>
