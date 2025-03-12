@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,6 +13,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import * as XLSX from 'xlsx';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { X } from 'lucide-react';
 
 // Add helper function for date conversion
 const convertTextToDate = (dateText: string): Date => {
@@ -64,50 +66,216 @@ interface ImportResult {
   errors: string[];
 }
 
+interface FilePreview {
+  file: File;
+  orderCode: string;
+  items: Array<{
+    position: number;
+    articleNumber: string;
+    quantity: number;
+    unit: string;
+    quantity2: number;
+    unit2: string;
+    description: string;
+    priceNet: number;
+    tax: number;
+  }>;
+}
+
+interface GroupedItem {
+  articleNumber: string;
+  description: string;
+  unit: string;
+  unit2: string;
+  priceNet: number;
+  tax: number;
+  totalQuantity: number;
+  totalQuantity2: number;
+  orderCode: string;
+  sources: Array<{
+    fileName: string;
+    orderCode: string;
+    position: number;
+    quantity: number;
+    quantity2: number;
+  }>;
+}
+
 export function ImportOrdersModal({
   open,
   onOpenChange,
   onSuccess,
 }: ImportOrdersModalProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
+  const [groupedItems, setGroupedItems] = useState<Record<string, GroupedItem>>({});
   const { toast } = useToast();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+  // Update groupedItems when filePreviews changes
+  useEffect(() => {
+    const newGroupedItems: Record<string, GroupedItem> = {};
+    
+    filePreviews.forEach(preview => {
+      preview.items.forEach(item => {
+        if (!item.articleNumber) return; // Skip items without article number
+
+        if (!newGroupedItems[item.articleNumber]) {
+          newGroupedItems[item.articleNumber] = {
+            articleNumber: item.articleNumber,
+            description: item.description,
+            unit: item.unit,
+            unit2: item.unit2,
+            priceNet: item.priceNet,
+            tax: item.tax,
+            totalQuantity: 0,
+            totalQuantity2: 0,
+            orderCode: preview.orderCode, // Store the first order code
+            sources: []
+          };
+        }
+
+        // Add quantities
+        newGroupedItems[item.articleNumber].totalQuantity += item.quantity;
+        newGroupedItems[item.articleNumber].totalQuantity2 += item.quantity2;
+
+        // Add source information
+        newGroupedItems[item.articleNumber].sources.push({
+          fileName: preview.file.name,
+          orderCode: preview.orderCode,
+          position: item.position,
+          quantity: item.quantity,
+          quantity2: item.quantity2
+        });
+      });
+    });
+
+    setGroupedItems(newGroupedItems);
+  }, [filePreviews]);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setSelectedFiles(prev => [...prev, ...files]);
+      
+      // Generate previews for new files
+      for (const file of files) {
+        try {
+          const preview = await generatePreview(file);
+          setFilePreviews(prev => [...prev, preview]);
+        } catch (error) {
+          console.error(`Error generating preview for ${file.name}:`, error);
+          toast({
+            title: 'Error',
+            description: `Failed to preview ${file.name}. Please check if it's a valid Excel file.`,
+            variant: 'destructive',
+          });
+        }
+      }
     }
   };
 
-  const validateItem = (item: Record<string, string>, columns: Record<string, string>) => {
-    const errors: string[] = [];
-    const { articleNumberColumn, quantityColumn, unitColumn, priceNetColumn, taxColumn } = columns;
+  const generatePreview = async (file: File): Promise<FilePreview> => {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data);
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-    if (!item[articleNumberColumn]) {
-      errors.push('Article Number is required');
-    }
-    if (!item[quantityColumn] || Number(item[quantityColumn]) <= 0) {
-      errors.push('Quantity must be greater than 0');
-    }
-    if (!item[unitColumn]) {
-      errors.push('Unit is required');
-    }
-    if (!item[priceNetColumn] || Number(item[priceNetColumn]) <= 0) {
-      errors.push('Price Net must be greater than 0');
-    }
-    if (!item[taxColumn] || Number(item[taxColumn]) < 0) {
-      errors.push('Tax must be greater than or equal to 0');
+    const getCellValue = (col: string, row: number): string => {
+      const cell = worksheet[`${col}${row}`];
+      return cell ? cell.v?.toString() || '' : '';
+    };
+
+    // Find A N G E B O T row
+    let angebotRow = -1;
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    
+    for (let row = range.s.r; row <= range.e.r; row++) {
+      if (getCellValue('B', row + 1) === 'A N G E B O T') {
+        angebotRow = row + 1;
+        break;
+      }
     }
 
-    return errors;
+    if (angebotRow === -1) {
+      throw new Error('Could not find A N G E B O T row');
+    }
+
+    const orderCode = getCellValue('D', angebotRow);
+
+    // Find items start row
+    let itemsStartRow = -1;
+    for (let row = angebotRow + 4; row <= range.e.r; row++) {
+      if (getCellValue('B', row + 1) === 'Pos') {
+        itemsStartRow = row + 2;
+        break;
+      }
+    }
+
+    if (itemsStartRow === -1) {
+      throw new Error('Could not find items start row');
+    }
+
+    const items = [];
+    let currentRow = itemsStartRow;
+
+    while (currentRow <= range.e.r) {
+      const position = getCellValue('B', currentRow);
+      const articleNumber = getCellValue('C', currentRow);
+      let description = getCellValue('G', currentRow);
+      const quantity = parseFloat(getCellValue('D', currentRow)) || 0;
+      const unit = getCellValue('F', currentRow);
+      let quantity2 = 0;
+      let unit2 = '';
+      const priceNet = parseFloat(getCellValue('J', currentRow)) || 0;
+      const tax = parseFloat(getCellValue('K', currentRow)) || 0;
+
+      if (position !== '' && isNaN(Number(position))) {
+        break;
+      }
+
+      if (position === '') {
+        unit2 = getCellValue('D', currentRow);
+        if (unit2 !== '' && unit2.startsWith('/')) {
+          const arr = unit2.replace('/', '').split(' ');
+          if (arr.length === 2) {
+            quantity2 = parseFloat(arr[0]) || 0;
+            unit2 = arr[1];
+          }
+          description += getCellValue('G', currentRow);
+          description = description.trim();
+        }
+        currentRow++;
+        continue;
+      }
+
+      items.push({
+        position: Number(position),
+        articleNumber,
+        quantity,
+        unit,
+        quantity2,
+        unit2,
+        description,
+        priceNet,
+        tax
+      });
+
+      currentRow++;
+    }
+
+    return { file, orderCode, items };
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setFilePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleImport = async () => {
-    if (!selectedFile) {
+    if (selectedFiles.length === 0) {
       toast({
         title: 'Error',
-        description: 'Please select a file first',
+        description: 'Please select at least one file',
         variant: 'destructive',
       });
       return;
@@ -115,225 +283,168 @@ export function ImportOrdersModal({
 
     try {
       setIsLoading(true);
-      console.log('Starting import process...');
+      const results: ImportResult[] = [];
 
-      // Read Excel file
-      const data = await selectedFile.arrayBuffer();
-      const workbook = XLSX.read(data);
-      console.log('Workbook loaded:', {
-        sheetNames: workbook.SheetNames,
-        numberOfSheets: workbook.SheetNames.length
-      });
+      for (const preview of filePreviews) {
+        const { orderCode, items } = preview;
 
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      console.log('Using worksheet:', workbook.SheetNames[0]);
-
-      // Helper function to get cell value
-      const getCellValue = (col: string, row: number): string => {
-        const cell = worksheet[`${col}${row}`];
-        const value = cell ? cell.v?.toString() || '' : '';
-        console.log(`Getting value at ${col}${row}:`, value);
-        return value;
-      };
-
-      // Find A N G E B O T row
-      let angebotRow = -1;
-      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-      
-      for (let row = range.s.r; row <= range.e.r; row++) {
-        const value = getCellValue('B', row + 1);
-        console.log(`Row ${row + 1}, Column B:`, value);
-        if (value === 'A N G E B O T') {
-          angebotRow = row + 1;
-          break;
-        }
-      }
-
-      console.log('Found A N G E B O T at row:', angebotRow);
-
-      if (angebotRow === -1) {
-        throw new Error('Could not find A N G E B O T row');
-      }
-
-      // Get order code from column D, same row as A N G E B O T
-      const orderCode = getCellValue('D', angebotRow);
-      console.log('Order Code:', orderCode);
-
-      // Find customer ID row (3 rows after A N G E B O T)
-      const customerIdRow = angebotRow + 3;
-      const customerId = getCellValue('F', customerIdRow);
-      console.log('Customer ID:', customerId);
-
-      // Find date row (6 rows after A N G E B O T)
-      const dateRow = angebotRow + 6;
-      const createdAt = getCellValue('F', dateRow);
-      console.log('Created At:', createdAt);
-
-      // Find items start row (10 rows after A N G E B O T)
-      let itemsStartRow = -1;
-      for (let row = angebotRow + 4; row <= range.e.r; row++) {
-        const value = getCellValue('B', row + 1);
-        console.log(`Row ${row + 1}, Column B:`, value);
-        if (value === 'Pos') {
-          itemsStartRow = row + 2;
-          console.log('Items start row:', itemsStartRow);
-          break;
-        }
-      }
-
-      if (itemsStartRow === -1) {
-        throw new Error('Could not find items start row');
-      }
-
-      const items: Array<{
-        position: number;
-        articleNumber: string;
-        quantity: number;
-        unit: string;
-        quantity2: number;
-        unit2: string;
-        description: string;
-        priceNet: number;
-        tax: number;
-      }> = [];
-
-      // Extract items data
-      let currentRow = itemsStartRow;
-      while (currentRow <= range.e.r) {
-        const position = getCellValue('B', currentRow);
-        const articleNumber = getCellValue('C', currentRow);
-        let description = getCellValue('G', currentRow);
-        const quantity = parseFloat(getCellValue('D', currentRow)) || 0;
-        const unit = getCellValue('F', currentRow);
-        let quantity2 = 0;
-        let unit2 = '';
-        const priceNet = parseFloat(getCellValue('J', currentRow)) || 0;
-        const tax = parseFloat(getCellValue('K', currentRow)) || 0;
-
-        console.log({ currentRow, position, articleNumber, description, quantity, unit, priceNet, tax });
-        // Break if we hit position not empty but not a number
-        if (position !== '' && isNaN(Number(position))) {
-          break;
-        }
-
-        // continue if position is empty
-        if (position === '') {
-          unit2 = getCellValue('D', currentRow);
-          if (unit2 !== '' && unit2.startsWith('/')) {
-            const arr = unit2.replace('/', '').split(' ');
-            if (arr.length === 2) {
-              quantity2 = parseFloat(arr[0]) || 0;
-              unit2 = arr[1];
-            }
-            description += getCellValue('G', currentRow);
-            description = description.trim();
-          }
-          
-          currentRow++;
-          continue;
-        }
-
-        items.push({
-          position: Number(position),
-          articleNumber,
-          quantity,
-          unit,
-          quantity2,
-          unit2,
-          description,
-          priceNet,
-          tax
+        const response = await fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderCode,
+            items,
+          }),
         });
 
-        currentRow++;
+        if (!response.ok) {
+          throw new Error(`Failed to import order ${orderCode}`);
+        }
+
+        const result = await response.json();
+        results.push(result);
       }
 
-      console.log('Extracted items:', items);
-
-      // Validate required fields
-      if (!orderCode || !customerId || !createdAt) {
-        throw new Error('Missing required order information');
-      }
-
-      if (items.length === 0) {
-        throw new Error('No items found in the Excel file');
-      }
-
-      // Create order data
-      const orderData = {
-        orderCode,
-        customerId,
-        createdAt: convertTextToDate(createdAt).toISOString(),
-        items
-      };
-
-      console.log('Final order data to be sent:', orderData);
-
-      // Send data to API
-      const formData = new FormData();
-      formData.append('data', JSON.stringify(orderData));
-
-      console.log('Sending data to API...');
-      const response = await fetch('/api/orders/import', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-      console.log('API response:', result);
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to import order');
-      }
+      const successCount = results.filter(r => r.success).length;
+      const failedCount = results.length - successCount;
 
       toast({
         title: 'Import Complete',
-        description: `Order ${orderCode} imported successfully.`,
+        description: `Successfully imported ${successCount} orders. ${failedCount} failed.`,
+        variant: failedCount === 0 ? 'default' : 'destructive',
       });
 
-      setSelectedFile(null);
+      if (successCount > 0 && onSuccess) {
+        onSuccess();
+      }
+
+      // Clear files after successful import
+      setSelectedFiles([]);
+      setFilePreviews([]);
       onOpenChange(false);
-      onSuccess?.();
     } catch (error) {
       console.error('Import error:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to import order',
+        description: 'Failed to import orders. Please try again.',
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
-      console.log('Import process completed.');
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Import Orders</DialogTitle>
           <DialogDescription>
-            Upload an Excel file containing order data. Required columns:
-           
+            Upload Excel files containing order data to import. Items with the same article number will be grouped together.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Input
-            id="file"
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileSelect}
-            disabled={isLoading}
-          />
+
+        <div className="flex flex-col gap-4 flex-1 overflow-hidden">
+          <div className="flex items-center gap-4">
+            <Input
+              type="file"
+              onChange={handleFileSelect}
+              accept=".xlsx,.xls"
+              multiple
+              className="flex-1"
+            />
+          </div>
+
+          {filePreviews.length > 0 && (
+            <ScrollArea className="flex-1 border rounded-md p-4">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h3 className="font-medium">Grouped Items by Article Number</h3>
+                  <div className="text-sm text-muted-foreground">
+                    {Object.keys(groupedItems).length} unique items from {filePreviews.length} files
+                  </div>
+                  <div className="relative w-full overflow-auto">
+                    <div className="w-full overflow-auto">
+                      <table className="w-full min-w-[800px] caption-bottom text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="h-10 px-2 text-left align-middle font-medium whitespace-nowrap">Article Number</th>
+                            <th className="h-10 px-2 text-left align-middle font-medium whitespace-nowrap">Description</th>
+                            <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Kt</th>
+                            <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Sack/Stk</th>
+                            <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Price Net</th>
+                            <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Tax</th>
+                            <th className="h-10 px-2 text-left align-middle font-medium whitespace-nowrap">Order Code</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.values(groupedItems).map((item) => (
+                            <tr
+                              key={item.articleNumber}
+                              className="border-b transition-colors hover:bg-muted/50"
+                            >
+                              <td className="p-2 align-middle font-medium whitespace-nowrap">{item.articleNumber}</td>
+                              <td className="p-2 align-middle whitespace-nowrap">{item.description}</td>
+                              <td className="p-2 align-middle text-right whitespace-nowrap">
+                                {item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}
+                              </td>
+                              <td className="p-2 align-middle text-right whitespace-nowrap">
+                                {item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity} ${item.unit}` : ''}
+                                {item.totalQuantity2 > 0 && ` / ${item.totalQuantity2} ${item.unit2}`}
+                              </td>
+                              <td className="p-2 align-middle text-right whitespace-nowrap">
+                                {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet)}
+                              </td>
+                              <td className="p-2 align-middle text-right whitespace-nowrap">
+                                {(item.tax * 100).toFixed(1)}%
+                              </td>
+                              <td className="p-2 align-middle whitespace-nowrap">
+                                {[...new Set(item.sources.map(s => s.orderCode))].join(', ')}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-medium mb-2">Original Files</h3>
+                  <div className="text-sm space-y-1">
+                    {filePreviews.map((preview, index) => (
+                      <div key={index} className="flex items-center justify-between group">
+                        <span className="text-muted-foreground">
+                          {preview.file.name} (Order: {preview.orderCode})
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
         </div>
-        <DialogFooter className="flex gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button 
-            onClick={handleImport} 
-            disabled={isLoading || !selectedFile}
-          >
+          <Button onClick={handleImport} disabled={isLoading || selectedFiles.length === 0}>
             {isLoading ? 'Importing...' : 'Import'}
           </Button>
         </DialogFooter>
