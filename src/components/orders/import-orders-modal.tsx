@@ -16,7 +16,20 @@ import * as XLSX from 'xlsx';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Printer, FileSpreadsheet, FileDown } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+// Extend jsPDF type to include autoTable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 
 // Add helper function for date conversion
 const convertTextToDate = (dateText: string): Date => {
@@ -436,36 +449,64 @@ export function ImportOrdersModal({
   };
 
   const handlePdfExport = () => {
-    const doc = new jsPDF();
+    try {
+      // Create new document
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(14);
+      doc.text('Grouped Items by Article Number', 14, 15);
 
-    const tableData = Object.values(groupedItems).map(item => [
-      item.articleNumber,
-      item.description,
-      item.unit.toLowerCase() === 'kt' ? item.totalQuantity.toString() : '',
-      item.unit.toLowerCase() !== 'kt' 
-        ? `${item.totalQuantity} ${item.unit}${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2} ${item.unit2}` : ''}`
-        : '',
-      new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet),
-      `${(item.tax * 100).toFixed(1)}%`,
-      [...new Set(item.sources.map(s => s.orderCode))].join(', ')
-    ]);
+      // Convert data for the table
+      const tableData = Object.values(groupedItems).map(item => [
+        item.articleNumber,
+        item.description,
+        item.unit.toLowerCase() === 'kt' ? item.totalQuantity.toString() : '',
+        item.unit.toLowerCase() !== 'kt' 
+          ? `${item.totalQuantity} ${item.unit}${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2} ${item.unit2}` : ''}`
+          : '',
+        new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet),
+        `${(item.tax * 100).toFixed(1)}%`,
+        [...new Set(item.sources.map(s => s.orderCode))].join(', ')
+      ]);
 
-    (doc as any).autoTable({
-      head: [['Article Number', 'Description', 'Kt', 'Sack/Stk', 'Price Net', 'Tax', 'Order Code']],
-      body: tableData,
-      startY: 20,
-      headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
-      theme: 'grid',
-      styles: { fontSize: 8 },
-      columnStyles: {
-        2: { halign: 'right' },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' }
-      }
-    });
+      // Generate table using autoTable
+      autoTable(doc, {
+        head: [['Article Number', 'Description', 'Kt', 'Sack/Stk', 'Price Net', 'Tax', 'Order Code']],
+        body: tableData,
+        startY: 20,
+        headStyles: { 
+          fillColor: [245, 245, 245], 
+          textColor: [0, 0, 0],
+          fontSize: 10,
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          fontSize: 9
+        },
+        columnStyles: {
+          0: { cellWidth: 30 }, // Article Number
+          1: { cellWidth: 'auto' }, // Description
+          2: { cellWidth: 20, halign: 'right' }, // Kt
+          3: { cellWidth: 30, halign: 'right' }, // Sack/Stk
+          4: { cellWidth: 25, halign: 'right' }, // Price Net
+          5: { cellWidth: 20, halign: 'right' }, // Tax
+          6: { cellWidth: 'auto' } // Order Code
+        },
+        theme: 'grid',
+        margin: { top: 10 }
+      });
 
-    doc.save('grouped-items.pdf');
+      // Save the PDF
+      doc.save('grouped-items.pdf');
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate PDF. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
