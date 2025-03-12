@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { orders, orderItems, products } from '@/db/schema';
 import { eq, inArray } from 'drizzle-orm';
+import { type NewOrder, type NewOrderItem } from '@/db/schema';
 
 // Validation schema for order items from Excel
 const OrderItemSchema = z.object({
@@ -18,12 +19,11 @@ const OrderItemSchema = z.object({
 });
 
 // Validation schema for order data from Excel
-const OrderImportSchema = z.object({
+const OrderImportSchema = z.array(z.object({
   orderCode: z.string(),
-  createdAt: z.string(),
   customerId: z.string(),
   items: z.array(OrderItemSchema),
-});
+}));
 
 export async function POST(request: Request) {
   try {
@@ -47,10 +47,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Validation failed', details: validationResult.error }, { status: 400 });
     }
 
-    const { orderCode, createdAt, customerId, items } = validationResult.data;
+    const ordersData = validationResult.data;
+
+    // Collect all article numbers from all orders
+    const articleNumbers = [...new Set(ordersData.flatMap(order => 
+      order.items.map(item => item.articleNumber)
+    ))];
 
     // Verify all products exist and get their IDs
-    const articleNumbers = items.map(item => item.articleNumber);
     const existingProducts = await db
       .select()
       .from(products)
@@ -58,62 +62,62 @@ export async function POST(request: Request) {
 
     const productMap = new Map(existingProducts.map(p => [p.articleNumber, p]));
 
-    // Check if all products exist
-    // for (const item of items) {
-    //   if (!productMap.has(item.articleNumber)) {
-    //     return NextResponse.json(
-    //       { error: `Product not found: ${item.articleNumber}` },
-    //       { status: 400 }
-    //     );
-    //   }
-    // }
+    // Create orders and items in a transaction
+    const results = await db.transaction(async (tx) => {
+      const importedOrders = [];
 
-    // Create order and items in a transaction
-    const result = await db.transaction(async (tx) => {
-      // Insert order
-      const [order] = await tx
-        .insert(orders)
-        .values({
-          code: orderCode,
-          customerId: customerId,
-          createdAt: createdAt ? new Date() : new Date(), // Default to current date if invalid
-          createdBy: 'system', // You might want to get this from the session
-        })
-        .returning();
+      for (const orderData of ordersData) {
+        // Insert order with proper typing
+        const newOrderData: NewOrder = {
+          code: orderData.orderCode,
+          customerId: orderData.customerId,
+          createdAt: new Date(),
+          createdBy: 'system',
+        };
 
-      // Insert order items
-      const orderItemsData = items.map(item => ({
-        orderId: order.id,
-        productId: productMap.has(item.articleNumber) ? productMap.get(item.articleNumber)!.id : null,
-        position: item.position,
-        articleNumber: item.articleNumber,
-        description: item.description,
-        quantity2: item.quantity2,
-        unit2: item.unit2,
-        quantity: item.quantity.toString(),
-        unit: item.unit,
-        priceNet: item.priceNet.toString(),
-        tax: item.tax.toString(),
-      }));
+        const [newOrder] = await tx
+          .insert(orders)
+          .values(newOrderData)
+          .returning();
 
-      await tx.insert(orderItems).values(orderItemsData.map(item => ({
-        orderId: item.orderId,
-        productId: item.productId,
-        position: item.position,
-        articleNumber: item.articleNumber,
-        description: item.description,
-        quantity: item.quantity,
-        unit: item.unit,
-        priceNet: item.priceNet,
-        tax: item.tax,
-      })));
+        if (!newOrder?.id) {
+          throw new Error(`Failed to create order ${orderData.orderCode}`);
+        }
 
-      return order;
+        // Insert order items with proper typing
+        const orderItemsData: NewOrderItem[] = orderData.items.map(item => ({
+          orderId: newOrder.id,
+          productId: productMap.has(item.articleNumber) ? productMap.get(item.articleNumber)!.id : null,
+          position: item.position,
+          articleNumber: item.articleNumber,
+          description: item.description,
+          quantity: item.quantity.toString(),
+          unit: item.unit,
+          quantity2: item.quantity2.toString(),
+          unit2: item.unit2,
+          priceNet: item.priceNet.toString(),
+          tax: item.tax,
+        }));
+
+        await tx.insert(orderItems).values(orderItemsData);
+
+        importedOrders.push({
+          id: newOrder.id,
+          code: newOrder.code,
+          itemCount: orderItemsData.length,
+        });
+      }
+
+      return importedOrders;
     });
 
-    return NextResponse.json(result, { status: 201 });
+    return NextResponse.json({ 
+      success: true,
+      message: `Successfully imported ${results.length} orders`,
+      orders: results 
+    }, { status: 201 });
   } catch (error) {
-    console.error('Error importing order:', error);
+    console.error('Error importing orders:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

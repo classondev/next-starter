@@ -319,40 +319,32 @@ export function ImportOrdersModal({
 
     try {
       setIsLoading(true);
-      const results: ImportResult[] = [];
 
-      for (const preview of filePreviews) {
-        const { orderCode, items } = preview;
+      const response = await fetch('/api/orders/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(filePreviews.map(preview => ({
+          orderCode: preview.orderCode,
+          customerId: preview.customerId,
+          items: preview.items
+        }))),
+      });
 
-        const response = await fetch('/api/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            orderCode,
-            items,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to import order ${orderCode}`);
-        }
-
-        const result = await response.json();
-        results.push(result);
+      if (!response.ok) {
+        throw new Error('Failed to import orders');
       }
 
-      const successCount = results.filter(r => r.success).length;
-      const failedCount = results.length - successCount;
+      const result = await response.json();
 
       toast({
         title: 'Import Complete',
-        description: `Successfully imported ${successCount} orders. ${failedCount} failed.`,
-        variant: failedCount === 0 ? 'default' : 'destructive',
+        description: result.message || `Successfully imported ${result.orders.length} orders`,
+        variant: 'default',
       });
 
-      if (successCount > 0 && onSuccess) {
+      if (result.success && onSuccess) {
         onSuccess();
       }
 
