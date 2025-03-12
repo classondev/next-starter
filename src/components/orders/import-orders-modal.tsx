@@ -69,6 +69,8 @@ interface ImportResult {
 interface FilePreview {
   file: File;
   orderCode: string;
+  customerId: string;
+  date?: Date;
   items: Array<{
     position: number;
     articleNumber: string;
@@ -202,6 +204,14 @@ export function ImportOrdersModal({
     }
 
     const orderCode = getCellValue('D', angebotRow);
+    const customerId = getCellValue('D', angebotRow + 1);
+    const dateText = getCellValue('D', angebotRow + 2);
+    let date: Date | undefined;
+    try {
+      date = convertTextToDate(dateText);
+    } catch (error) {
+      console.error('Error parsing date:', error);
+    }
 
     // Find items start row
     let itemsStartRow = -1;
@@ -264,7 +274,13 @@ export function ImportOrdersModal({
       currentRow++;
     }
 
-    return { file, orderCode, items };
+    return { 
+      file, 
+      orderCode, 
+      customerId,
+      date,
+      items 
+    };
   };
 
   const removeFile = (index: number) => {
@@ -419,20 +435,31 @@ export function ImportOrdersModal({
 
                 <div>
                   <h3 className="font-medium mb-2">Original Files</h3>
-                  <div className="text-sm space-y-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {filePreviews.map((preview, index) => (
-                      <div key={index} className="flex items-center justify-between group">
-                        <span className="text-muted-foreground">
-                          {preview.file.name} (Order: {preview.orderCode})
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeFile(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium truncate">
+                              {preview.file.name}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0"
+                              onClick={() => removeFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="text-sm text-muted-foreground truncate">
+                            Order: {preview.orderCode} • Customer: {preview.customerId}
+                            {preview.date && ` • ${preview.date.toLocaleDateString('de-DE')}`}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
