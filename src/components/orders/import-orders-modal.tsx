@@ -617,35 +617,46 @@ export function ImportOrdersModal({
                 </div>
 
                 <div>
-                  <h3 className="font-medium mb-2">Original Files</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {filePreviews.map((preview, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium truncate">
-                              {preview.file.name}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 shrink-0"
-                              onClick={() => removeFile(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="text-sm text-muted-foreground truncate">
-                            Order: {preview.orderCode} • Customer: {preview.customerId}
-                            {preview.date && ` • ${preview.date.toLocaleDateString('de-DE')}`}
-                          </div>
+                  <Accordion type="single" collapsible defaultValue="">
+                    <AccordionItem value="original-files">
+                      <AccordionTrigger className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span>Original Files</span>
+                          <span className="text-sm text-muted-foreground">({filePreviews.length} files)</span>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {filePreviews.map((preview, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium truncate">
+                                    {preview.file.name}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 shrink-0"
+                                    onClick={() => removeFile(index)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <div className="text-sm text-muted-foreground truncate">
+                                  Order: {preview.orderCode} • Customer: {preview.customerId}
+                                  {preview.date && ` • ${preview.date.toLocaleDateString('de-DE')}`}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 </div>
               </div>
             </ScrollArea>
