@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProductForm } from "@/components/products/product-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,23 @@ import { columns } from "@/components/products/columns";
 import { ImportModal } from "@/components/products/ImportModal";
 import { Input } from "@/components/ui/input";
 
+// Custom hook for debouncing values
+function useDebounce<T>(value: T, delay: number = 500): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 async function getProducts(query?: string): Promise<Product[]> {
   try {
     const url = new URL("/api/products", window.location.origin);
@@ -48,11 +65,12 @@ async function getProducts(query?: string): Promise<Product[]> {
 export default function ProductsPage() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery);
   const { toast } = useToast();
   
   const { data: products = [], isLoading, isError, error, refetch } = useQuery<Product[], Error>({
-    queryKey: ["products", searchQuery],
-    queryFn: () => getProducts(searchQuery),
+    queryKey: ["products", debouncedSearchQuery],
+    queryFn: () => getProducts(debouncedSearchQuery),
     retry: 2,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
