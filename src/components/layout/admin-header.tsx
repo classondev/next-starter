@@ -10,7 +10,8 @@ export function AdminHeader() {
   const pathname = usePathname()
   const { locale } = useLanguage()
   const { t } = useTranslation(locale)
-  const title = pathname?.split('/').pop()?.charAt(0).toUpperCase() + pathname?.split('/').pop()?.slice(1)
+  const pathSegment = pathname?.split('/').pop() || '';
+  const title = pathSegment.charAt(0).toUpperCase() + pathSegment.slice(1);
 
   return (
     <div className="border-b">

@@ -47,21 +47,16 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('query');
 
-    let queryBuilder = db
+    const data = await db
       .select()
-      .from(orders);
-
-    if (query) {
-      queryBuilder = queryBuilder.where(
+      .from(orders)
+      .where(query ? 
         or(
           ilike(orders.code, `%${query}%`),
           ilike(orders.customerId, `%${query}%`),
           ilike(orders.createdBy, `%${query}%`)
-        )
-      );
-    }
-
-    const data = await queryBuilder.orderBy(desc(orders.createdAt));
+        ) : undefined)
+      .orderBy(desc(orders.createdAt));
 
     return NextResponse.json(data);
   } catch (error) {
