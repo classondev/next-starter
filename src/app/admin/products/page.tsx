@@ -83,7 +83,7 @@ export default function ProductsPage() {
     });
     
     return (
-      <div className="container mx-auto py-10">
+      <div className="p-4">
         <div className="flex flex-col justify-center items-center h-64 space-y-4">
           <div className="text-lg text-red-600">Failed to load products</div>
           <Button onClick={() => refetch()}>Try Again</Button>
@@ -94,7 +94,7 @@ export default function ProductsPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-10">
+      <div className="p-4">
         <div className="flex justify-center items-center h-64">
           <div className="text-lg">Loading products...</div>
         </div>
@@ -103,24 +103,23 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex flex-col space-y-4 mb-6">
-        <div className="flex justify-between items-center">
-          <Input
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            className="w-[300px]"
-          />
-          <div className="space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setImportModalOpen(true)}
-            >
-              Import Products
-            </Button>
-            <Button>Add Product</Button>
-          </div>
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <Input
+          placeholder="Search products..."
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          className="max-w-xs"
+        />
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setImportModalOpen(true)}
+            size="sm"
+          >
+            Import Products
+          </Button>
+          <Button size="sm">Add Product</Button>
         </div>
       </div>
       

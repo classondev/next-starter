@@ -27,7 +27,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <main className="container py-8">{children}</main>
+            <main className="container px-2">{children}</main>
             <Toaster />
           </ThemeProvider>
         </Providers>
