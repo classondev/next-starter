@@ -14,7 +14,9 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import * as XLSX from 'xlsx';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { X } from 'lucide-react';
+import { X, Printer, FileSpreadsheet, FileDown } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 // Add helper function for date conversion
 const convertTextToDate = (dateText: string): Date => {
@@ -357,6 +359,115 @@ export function ImportOrdersModal({
     }
   };
 
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const tableContent = `
+      <html>
+        <head>
+          <title>Grouped Items</title>
+          <style>
+            body { font-family: Arial, sans-serif; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f5f5f5; }
+            .text-right { text-align: right; }
+          </style>
+        </head>
+        <body>
+          <h2>Grouped Items by Article Number</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Article Number</th>
+                <th>Description</th>
+                <th class="text-right">Kt</th>
+                <th class="text-right">Sack/Stk</th>
+                <th class="text-right">Price Net</th>
+                <th class="text-right">Tax</th>
+                <th>Order Code</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.values(groupedItems).map(item => `
+                <tr>
+                  <td>${item.articleNumber}</td>
+                  <td>${item.description}</td>
+                  <td class="text-right">${item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}</td>
+                  <td class="text-right">
+                    ${item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity} ${item.unit}` : ''}
+                    ${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2} ${item.unit2}` : ''}
+                  </td>
+                  <td class="text-right">${new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet)}</td>
+                  <td class="text-right">${(item.tax * 100).toFixed(1)}%</td>
+                  <td>${[...new Set(item.sources.map(s => s.orderCode))].join(', ')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(tableContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  const handleExcelExport = () => {
+    const worksheet = XLSX.utils.json_to_sheet(
+      Object.values(groupedItems).map(item => ({
+        'Article Number': item.articleNumber,
+        'Description': item.description,
+        'Kt': item.unit.toLowerCase() === 'kt' ? item.totalQuantity : '',
+        'Sack/Stk': item.unit.toLowerCase() !== 'kt' 
+          ? `${item.totalQuantity} ${item.unit}${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2} ${item.unit2}` : ''}`
+          : '',
+        'Price Net': item.priceNet,
+        'Tax': `${(item.tax * 100).toFixed(1)}%`,
+        'Order Code': [...new Set(item.sources.map(s => s.orderCode))].join(', ')
+      }))
+    );
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Grouped Items');
+    XLSX.writeFile(workbook, 'grouped-items.xlsx');
+  };
+
+  const handlePdfExport = () => {
+    const doc = new jsPDF();
+
+    const tableData = Object.values(groupedItems).map(item => [
+      item.articleNumber,
+      item.description,
+      item.unit.toLowerCase() === 'kt' ? item.totalQuantity.toString() : '',
+      item.unit.toLowerCase() !== 'kt' 
+        ? `${item.totalQuantity} ${item.unit}${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2} ${item.unit2}` : ''}`
+        : '',
+      new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet),
+      `${(item.tax * 100).toFixed(1)}%`,
+      [...new Set(item.sources.map(s => s.orderCode))].join(', ')
+    ]);
+
+    (doc as any).autoTable({
+      head: [['Article Number', 'Description', 'Kt', 'Sack/Stk', 'Price Net', 'Tax', 'Order Code']],
+      body: tableData,
+      startY: 20,
+      headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      columnStyles: {
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' }
+      }
+    });
+
+    doc.save('grouped-items.pdf');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -383,7 +494,38 @@ export function ImportOrdersModal({
             <ScrollArea className="flex-1 border rounded-md p-4">
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <h3 className="font-medium">Grouped Items by Article Number</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium">Grouped Items by Article Number</h3>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePrint}
+                        className="flex items-center gap-2"
+                      >
+                        <Printer className="h-4 w-4" />
+                        Print
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleExcelExport}
+                        className="flex items-center gap-2"
+                      >
+                        <FileSpreadsheet className="h-4 w-4" />
+                        Excel
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePdfExport}
+                        className="flex items-center gap-2"
+                      >
+                        <FileDown className="h-4 w-4" />
+                        PDF
+                      </Button>
+                    </div>
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {Object.keys(groupedItems).length} unique items from {filePreviews.length} files
                   </div>
