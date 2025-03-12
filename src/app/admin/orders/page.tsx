@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ImportOrdersModal } from '@/components/orders/import-orders-modal';
+import { ViewOrderModal } from '@/components/orders/view-order-modal';
 import { Order } from '@/db/schema';
 import Link from 'next/link';
 
@@ -10,6 +11,8 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const fetchOrders = async () => {
     try {
@@ -34,6 +37,11 @@ export default function OrdersPage() {
     return new Date(date).toLocaleDateString();
   };
 
+  const handleViewOrder = (orderId: number) => {
+    setSelectedOrderId(orderId);
+    setIsViewModalOpen(true);
+  };
+
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
@@ -52,6 +60,12 @@ export default function OrdersPage() {
         open={isImportModalOpen}
         onOpenChange={setIsImportModalOpen}
         onSuccess={fetchOrders}
+      />
+
+      <ViewOrderModal
+        orderId={selectedOrderId}
+        open={isViewModalOpen}
+        onOpenChange={setIsViewModalOpen}
       />
 
       {isLoading ? (
@@ -82,8 +96,12 @@ export default function OrdersPage() {
                     <td className="p-4">{order.createdBy}</td>
                     <td className="p-4">
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/admin/orders/${order.id}`}>View</Link>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewOrder(order.id)}
+                        >
+                          View
                         </Button>
                       </div>
                     </td>
