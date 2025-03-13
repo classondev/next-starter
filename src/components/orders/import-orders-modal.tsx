@@ -128,6 +128,7 @@ export function ImportOrdersModal({
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [groupedItems, setGroupedItems] = useState<Record<string, GroupedItem>>({});
   const [disabledFiles, setDisabledFiles] = useState<Set<number>>(new Set());
+  const [headerTitle, setHeaderTitle] = useState<string>(new Date().toLocaleDateString('de-DE'));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -396,7 +397,6 @@ export function ImportOrdersModal({
     const tableContent = `
       <html>
         <head>
-          <title>Grouped Items</title>
           <style>
             body { font-family: Arial, sans-serif; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -406,7 +406,7 @@ export function ImportOrdersModal({
           </style>
         </head>
         <body>
-          <h2>Grouped Items by Article Number</h2>
+          <h2>${headerTitle}</h2>
           <table>
             <thead>
               <tr>
@@ -482,8 +482,8 @@ export function ImportOrdersModal({
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Grouped Items');
-    XLSX.writeFile(workbook, 'grouped-items.xlsx');
+    XLSX.utils.book_append_sheet(workbook, worksheet, headerTitle);
+    XLSX.writeFile(workbook, `${headerTitle}.xlsx`);
   };
 
   const handlePdfExport = () => {
@@ -491,7 +491,7 @@ export function ImportOrdersModal({
       const doc = new jsPDF();
       
       doc.setFontSize(14);
-      doc.text('Grouped Items by Article Number', 14, 15);
+      doc.text(headerTitle, 14, 15);
 
       const enabledPreviews = filePreviews.filter((_, index) => !disabledFiles.has(index));
 
@@ -568,7 +568,7 @@ export function ImportOrdersModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Import Orders</DialogTitle>
           {/* <DialogDescription>
@@ -576,152 +576,159 @@ export function ImportOrdersModal({
           </DialogDescription> */}
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0">
           {filePreviews.length > 0 && (
-            <ScrollArea className="flex-1 ">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium">Grouped Items by Article Number</h3>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePrint}
-                        className="flex items-center gap-2"
-                      >
-                        <Printer className="h-4 w-4" />
-                        Print
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleExcelExport}
-                        className="flex items-center gap-2"
-                      >
-                        <FileSpreadsheet className="h-4 w-4" />
-                        Excel
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePdfExport}
-                        className="flex items-center gap-2"
-                      >
-                        <FileDown className="h-4 w-4" />
-                        PDF
-                      </Button>
+            <ScrollArea className="h-[calc(90vh-12rem)] w-full" type="always">
+              <div className="pr-4">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Input
+                        value={headerTitle}
+                        onChange={(e) => setHeaderTitle(e.target.value)}
+                        className="w-[200px]"
+                        placeholder="Enter title..."
+                      />
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handlePrint}
+                          className="flex items-center gap-2"
+                        >
+                          <Printer className="h-4 w-4" />
+                          Print
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleExcelExport}
+                          className="flex items-center gap-2"
+                        >
+                          <FileSpreadsheet className="h-4 w-4" />
+                          Excel
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handlePdfExport}
+                          className="flex items-center gap-2"
+                        >
+                          <FileDown className="h-4 w-4" />
+                          PDF
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  {/* <div className="text-sm text-muted-foreground">
-                    {Object.keys(groupedItems).length} unique items from {filePreviews.length} files
-                  </div> */}
-                  <div className="relative w-full overflow-auto">
-                    <div className="w-full overflow-auto">
-                      <table className="w-full rounded-md min-w-[800px] caption-bottom text-sm">
-                        <thead>
-                          <tr className="border rounded-md">
-                            <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Article Number</th>
-                            <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Description</th>
-                            <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Kt</th>
-                            <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Sack/Stk</th>
-                            { filePreviews.map((preview, index) => (
-                              !disabledFiles.has(index) && (
-                                <th key={index} className="h-10 border rounded-md px-2 text-right align-middle font-medium whitespace-nowrap">
-                                  {preview.orderCode}
-                                </th>
-                              )
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.values(groupedItems).map((item) => (
-                            <tr
-                              key={item.articleNumber}
-                              className="border transition-colors hover:bg-muted/50"
-                            >
-                              <td className="p-2 border align-middle font-medium whitespace-nowrap">{item.articleNumber}</td>
-                              <td className="p-2 border align-middle whitespace-nowrap">{item.description}</td>
-                              <td className="p-2 border align-middle text-right whitespace-nowrap">
-                                {item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}
-                              </td>
-                              <td className="p-2 border align-middle text-right whitespace-nowrap">
-                                {item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity}` : ''}
-                                {item.totalQuantity2 > 0 && ` / ${item.totalQuantity2}`}
-                              </td>
+                    {/* <div className="text-sm text-muted-foreground">
+                      {Object.keys(groupedItems).length} unique items from {filePreviews.length} files
+                    </div> */}
+                    <div className="relative w-full overflow-auto">
+                      <div className="w-full overflow-auto">
+                        <table className="w-full rounded-md min-w-[800px] caption-bottom text-sm">
+                          <thead>
+                            <tr className="border rounded-md">
+                              <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Article Number</th>
+                              <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Description</th>
+                              <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Kt</th>
+                              <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Sack/Stk</th>
                               { filePreviews.map((preview, index) => (
-                                <td key={index} className="p-2 border bg-muted/50 text-muted-foreground align-middle text-right whitespace-nowrap">
-                                      {
-                                        preview.items
-                                          .filter((item1) => item.articleNumber === item1.articleNumber)
-                                          .map((item) => (
-                                            item.quantity
-                                          ))
-                                      }
-                                </td>                                
+                                !disabledFiles.has(index) && (
+                                  <th key={index} className="h-10 border rounded-md px-2 text-right align-middle font-medium whitespace-nowrap">
+                                    {preview.orderCode}
+                                  </th>
+                                )
                               ))}
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {Object.values(groupedItems).map((item) => (
+                              <tr
+                                key={item.articleNumber}
+                                className="border transition-colors hover:bg-muted/50"
+                              >
+                                <td className="p-2 border align-middle font-medium whitespace-nowrap">{item.articleNumber}</td>
+                                <td className="p-2 border align-middle whitespace-nowrap">{item.description}</td>
+                                <td className="p-2 border align-middle text-right whitespace-nowrap">
+                                  {item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}
+                                </td>
+                                <td className="p-2 border align-middle text-right whitespace-nowrap">
+                                  {item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity}` : ''}
+                                  {item.totalQuantity2 > 0 && ` / ${item.totalQuantity2}`}
+                                </td>
+                                { filePreviews.map((preview, index) => (
+                                  <td key={index} className="p-2 border bg-muted/50 text-muted-foreground align-middle text-right whitespace-nowrap">
+                                        {
+                                          preview.items
+                                            .filter((item1) => item.articleNumber === item1.articleNumber)
+                                            .map((item) => (
+                                              item.quantity
+                                            ))
+                                        }
+                                  </td>                                
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div>
-                  <Accordion type="single" collapsible defaultValue="">
-                    <AccordionItem value="original-files">
-                      <AccordionTrigger className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span>Original Files</span>
-                          <span className="text-sm text-muted-foreground">({filePreviews.length} files)</span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {filePreviews.map((preview, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30"
-                            >
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={!disabledFiles.has(index)}
-                                    onChange={() => toggleFileEnabled(index)}
-                                    className="h-4 w-4 rounded border-gray-300"
-                                  />
-                                  <span className="font-medium truncate">
-                                    {preview.file.name}
-                                  </span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 shrink-0"
-                                    onClick={() => removeFile(index)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                                <div className="text-sm text-muted-foreground truncate">
-                                  Order: {preview.orderCode} • Customer: {preview.customerId}
-                                  {preview.date && ` • ${preview.date.toLocaleDateString('de-DE')}`}
+                  <div>
+                    <Accordion type="single" collapsible defaultValue="">
+                      <AccordionItem value="original-files">
+                        <AccordionTrigger className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span>Original Files</span>
+                            <span className="text-sm text-muted-foreground">({filePreviews.length} files)</span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {filePreviews.map((preview, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={!disabledFiles.has(index)}
+                                      onChange={() => toggleFileEnabled(index)}
+                                      className="h-4 w-4 rounded border-gray-300"
+                                    />
+                                    <span className="font-medium truncate">
+                                      {preview.file.name}
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 shrink-0"
+                                      onClick={() => removeFile(index)}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                  <div className="text-sm text-muted-foreground truncate">
+                                    Order: {preview.orderCode} • Customer: {preview.customerId}
+                                    {preview.date && ` • ${preview.date.toLocaleDateString('de-DE')}`}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
                 </div>
               </div>
             </ScrollArea>
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-4">
           <div className="flex w-full items-center justify-between">
             <Input
               ref={fileInputRef}
