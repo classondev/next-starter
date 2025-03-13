@@ -23,6 +23,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { parseNumber } from '@/lib/utils';
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -265,12 +266,17 @@ export function ImportOrdersModal({
       const position = getCellValue('B', currentRow);
       const articleNumber = getCellValue('C', currentRow);
       let description = getCellValue('G', currentRow);
-      const quantity = parseFloat(getCellValue('D', currentRow)) || 0;
-      const unit = getCellValue('F', currentRow);
-      let quantity2 = 0;
+      let quantity = parseNumber(getCellValue('D', currentRow));
+      let unit = getCellValue('F', currentRow);
+      let quantity2: number = 0;
       let unit2 = '';
-      const priceNet = parseFloat(getCellValue('J', currentRow)) || 0;
-      const tax = parseFloat(getCellValue('K', currentRow)) || 0;
+      
+      if (unit.toLocaleLowerCase() === 'kt') {
+        quantity2 = quantity;
+        unit2 = unit;
+      }
+      const priceNet = parseNumber(getCellValue('J', currentRow));
+      const tax = parseNumber(getCellValue('K', currentRow));
 
       if (position !== '' && isNaN(Number(position))) {
         break;
@@ -281,11 +287,16 @@ export function ImportOrdersModal({
         if (unit2 !== '' && unit2.startsWith('/')) {
           const arr = unit2.replace('/', '').split(' ');
           if (arr.length === 2) {
-            quantity2 = parseFloat(arr[0]) || 0;
-            unit2 = arr[1];
+            quantity2 = parseNumber(arr[0]); // Kt quantity
+            unit2 = arr[1]; 
           }
-          description += getCellValue('G', currentRow);
-          description = description.trim();
+        }
+        if (description !== '') {
+          items[items.length - 1].description += `...${description}`;
+        }
+        if (quantity2 > 0) {
+          items[items.length - 1].quantity2 = quantity2;
+          items[items.length - 1].unit2 = unit2;
         }
         currentRow++;
         continue;
@@ -306,6 +317,7 @@ export function ImportOrdersModal({
       currentRow++;
     }
 
+    console.log(items);
     return { 
       file, 
       orderCode, 
@@ -431,8 +443,7 @@ export function ImportOrdersModal({
                     <td>${item.description}</td>
                     <td class="text-right">${item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}</td>
                     <td class="text-right">
-                      ${item.unit.toLowerCase() !== 'kt' ? item.totalQuantity : ''}
-                      ${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2}` : ''}
+                      ${item.unit.toLowerCase() !== 'kt' ? item.totalQuantity : (item.totalQuantity2 > 0 ? item.totalQuantity2 : '')}
                     </td>
                     ${fileQuantities}
                   </tr>
@@ -648,13 +659,12 @@ export function ImportOrdersModal({
                                 className="border transition-colors hover:bg-muted/50"
                               >
                                 <td className="p-2 border align-middle font-medium whitespace-nowrap">{item.articleNumber}</td>
-                                <td className="p-2 border align-middle whitespace-nowrap">{item.description}</td>
+                                <td className="p-2 border align-middle whitespace-nowrap">{ item.description }</td>
                                 <td className="p-2 border align-middle text-right whitespace-nowrap">
-                                  {item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}
+                                  {item.totalQuantity2}
                                 </td>
                                 <td className="p-2 border align-middle text-right whitespace-nowrap">
-                                  {item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity}` : ''}
-                                  {item.totalQuantity2 > 0 && ` / ${item.totalQuantity2}`}
+                                  {item.totalQuantity}
                                 </td>
                                 { filePreviews.map((preview, index) => (
                                   !disabledFiles.has(index) && (<td key={index} className="p-2 border bg-muted/50 text-muted-foreground align-middle text-right whitespace-nowrap">
@@ -662,7 +672,7 @@ export function ImportOrdersModal({
                                           preview.items
                                             .filter((item1) => item.articleNumber === item1.articleNumber)
                                             .map((item) => (
-                                              item.quantity
+                                              `${item.quantity}${item.quantity2 > 0 ? ` / ${item.quantity2} Kt` : ''}`
                                             ))
                                         }
                                   </td>)                           

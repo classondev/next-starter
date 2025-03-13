@@ -12,3 +12,9 @@ export function formatCurrency(value: string | number): string {
     currency: "USD",
   }).format(numericValue);
 } 
+
+export function parseNumber(value: string | number | null | undefined): number {
+  if (value === null || value === undefined) return 0;
+  const numericValue = typeof value === "string" ? parseFloat(value.trim().replace(',', '.')) : value;
+  return Number(numericValue.toFixed(2));
+}
