@@ -127,14 +127,18 @@ export function ImportOrdersModal({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [groupedItems, setGroupedItems] = useState<Record<string, GroupedItem>>({});
+  const [disabledFiles, setDisabledFiles] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Update groupedItems when filePreviews changes
+  // Update groupedItems when filePreviews or disabledFiles changes
   useEffect(() => {
     const newGroupedItems: Record<string, GroupedItem> = {};
     
-    filePreviews.forEach(preview => {
+    filePreviews.forEach((preview, index) => {
+      // Skip disabled files
+      if (disabledFiles.has(index)) return;
+
       preview.items.forEach(item => {
         if (!item.articleNumber) return; // Skip items without article number
 
@@ -148,7 +152,7 @@ export function ImportOrdersModal({
             tax: item.tax,
             totalQuantity: 0,
             totalQuantity2: 0,
-            orderCode: preview.orderCode, // Store the first order code
+            orderCode: preview.orderCode,
             sources: []
           };
         }
@@ -169,7 +173,19 @@ export function ImportOrdersModal({
     });
 
     setGroupedItems(newGroupedItems);
-  }, [filePreviews]);
+  }, [filePreviews, disabledFiles]);
+
+  const toggleFileEnabled = (index: number) => {
+    setDisabledFiles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -320,12 +336,15 @@ export function ImportOrdersModal({
     try {
       setIsLoading(true);
 
+      // Only send enabled files
+      const enabledPreviews = filePreviews.filter((_, index) => !disabledFiles.has(index));
+
       const response = await fetch('/api/orders/import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(filePreviews.map(preview => ({
+        body: JSON.stringify(enabledPreviews.map(preview => ({
           orderCode: preview.orderCode,
           customerId: preview.customerId,
           items: preview.items
@@ -368,7 +387,9 @@ export function ImportOrdersModal({
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const fileColumns = filePreviews.map(preview => 
+    const enabledPreviews = filePreviews.filter((_, index) => !disabledFiles.has(index));
+    
+    const fileColumns = enabledPreviews.map(preview => 
       `<th class="text-right">${preview.orderCode}</th>`
     ).join('');
 
@@ -398,7 +419,7 @@ export function ImportOrdersModal({
             </thead>
             <tbody>
               ${Object.values(groupedItems).map(item => {
-                const fileQuantities = filePreviews.map(preview => {
+                const fileQuantities = enabledPreviews.map(preview => {
                   const matchingItem = preview.items.find(i => i.articleNumber === item.articleNumber);
                   return `<td class="text-right">${matchingItem ? matchingItem.quantity : ''}</td>`;
                 }).join('');
@@ -428,13 +449,15 @@ export function ImportOrdersModal({
   };
 
   const handleExcelExport = () => {
+    const enabledPreviews = filePreviews.filter((_, index) => !disabledFiles.has(index));
+
     // Create headers including all file columns
     const headers = [
       'Article Number',
       'Description',
       'Kt',
       'Sack/Stk',
-      ...filePreviews.map(preview => preview.orderCode)
+      ...enabledPreviews.map(preview => preview.orderCode)
     ];
 
     // Create data rows
@@ -448,8 +471,8 @@ export function ImportOrdersModal({
           : ''
       };
 
-      // Add quantities for each file
-      filePreviews.forEach(preview => {
+      // Add quantities for each enabled file
+      enabledPreviews.forEach(preview => {
         const matchingItem = preview.items.find(i => i.articleNumber === item.articleNumber);
         baseData[preview.orderCode] = matchingItem ? matchingItem.quantity : '';
       });
@@ -470,13 +493,15 @@ export function ImportOrdersModal({
       doc.setFontSize(14);
       doc.text('Grouped Items by Article Number', 14, 15);
 
+      const enabledPreviews = filePreviews.filter((_, index) => !disabledFiles.has(index));
+
       // Create headers including all file columns
       const headers = [
         'Article Number',
         'Description',
         'Kt',
         'Sack/Stk',
-        ...filePreviews.map(preview => preview.orderCode)
+        ...enabledPreviews.map(preview => preview.orderCode)
       ];
 
       // Create data rows
@@ -490,8 +515,8 @@ export function ImportOrdersModal({
             : ''
         ];
 
-        // Add quantities for each file
-        filePreviews.forEach(preview => {
+        // Add quantities for each enabled file
+        enabledPreviews.forEach(preview => {
           const matchingItem = preview.items.find(i => i.articleNumber === item.articleNumber);
           baseData.push(matchingItem ? matchingItem.quantity.toString() : '');
         });
@@ -508,7 +533,7 @@ export function ImportOrdersModal({
       };
 
       // Add widths for file columns
-      filePreviews.forEach((_, index) => {
+      enabledPreviews.forEach((_, index) => {
         columnStyles[`${index + 4}`] = { cellWidth: 25, halign: 'right' };
       });
 
@@ -553,7 +578,7 @@ export function ImportOrdersModal({
 
         <div className="flex flex-col gap-4 flex-1 overflow-hidden">
           {filePreviews.length > 0 && (
-            <ScrollArea className="flex-1 border rounded-md p-4">
+            <ScrollArea className="flex-1 ">
               <div className="space-y-6">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -593,50 +618,47 @@ export function ImportOrdersModal({
                   </div> */}
                   <div className="relative w-full overflow-auto">
                     <div className="w-full overflow-auto">
-                      <table className="w-full min-w-[800px] caption-bottom text-sm">
+                      <table className="w-full rounded-md min-w-[800px] caption-bottom text-sm">
                         <thead>
-                          <tr className="border-b">
-                            <th className="h-10 px-2 text-left align-middle font-medium whitespace-nowrap">Article Number</th>
-                            <th className="h-10 px-2 text-left align-middle font-medium whitespace-nowrap">Description</th>
-                            <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Kt</th>
-                            <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Sack/Stk</th>
-                            {/* <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Price Net</th>
-                            <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Tax</th> */}
+                          <tr className="border rounded-md">
+                            <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Article Number</th>
+                            <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Description</th>
+                            <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Kt</th>
+                            <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Sack/Stk</th>
                             { filePreviews.map((preview, index) => (
-                              <th key={index} className="h-10 px-2 text-left align-middle font-medium whitespace-nowrap">{preview.orderCode}</th>
+                              !disabledFiles.has(index) && (
+                                <th key={index} className="h-10 border rounded-md px-2 text-right align-middle font-medium whitespace-nowrap">
+                                  {preview.orderCode}
+                                </th>
+                              )
                             ))}
-                           
                           </tr>
                         </thead>
                         <tbody>
                           {Object.values(groupedItems).map((item) => (
                             <tr
                               key={item.articleNumber}
-                              className="border-b transition-colors hover:bg-muted/50"
+                              className="border transition-colors hover:bg-muted/50"
                             >
-                              <td className="p-2 align-middle font-medium whitespace-nowrap">{item.articleNumber}</td>
-                              <td className="p-2 align-middle whitespace-nowrap">{item.description}</td>
-                              <td className="p-2 align-middle text-right whitespace-nowrap">
+                              <td className="p-2 border align-middle font-medium whitespace-nowrap">{item.articleNumber}</td>
+                              <td className="p-2 border align-middle whitespace-nowrap">{item.description}</td>
+                              <td className="p-2 border align-middle text-right whitespace-nowrap">
                                 {item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}
                               </td>
-                              <td className="p-2 align-middle text-right whitespace-nowrap">
+                              <td className="p-2 border align-middle text-right whitespace-nowrap">
                                 {item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity}` : ''}
                                 {item.totalQuantity2 > 0 && ` / ${item.totalQuantity2}`}
                               </td>
-                              {/* <td className="p-2 align-middle text-right whitespace-nowrap">
-                                {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet)}
-                              </td>
-                              <td className="p-2 align-middle text-right whitespace-nowrap">
-                                {(item.tax * 100).toFixed(1)}%
-                              </td> */}
                               { filePreviews.map((preview, index) => (
-                                preview.items
-                                  .filter((item1) => item.articleNumber === item1.articleNumber)
-                                  .map((item) => (
-                                  <td key={index} className="p-2 text-muted-foreground align-middle text-right whitespace-nowrap">
-                                    {item.quantity}
-                                  </td>
-                                ))
+                                <td key={index} className="p-2 border bg-muted/50 text-muted-foreground align-middle text-right whitespace-nowrap">
+                                      {
+                                        preview.items
+                                          .filter((item1) => item.articleNumber === item1.articleNumber)
+                                          .map((item) => (
+                                            item.quantity
+                                          ))
+                                      }
+                                </td>                                
                               ))}
                             </tr>
                           ))}
@@ -664,6 +686,12 @@ export function ImportOrdersModal({
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={!disabledFiles.has(index)}
+                                    onChange={() => toggleFileEnabled(index)}
+                                    className="h-4 w-4 rounded border-gray-300"
+                                  />
                                   <span className="font-medium truncate">
                                     {preview.file.name}
                                   </span>
