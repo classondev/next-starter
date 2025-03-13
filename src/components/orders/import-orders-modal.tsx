@@ -588,55 +588,52 @@ export function ImportOrdersModal({
           </DialogDescription> */}
         </DialogHeader>
 
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {filePreviews.length > 0 && (
-            <ScrollArea className="h-[calc(90vh-12rem)] w-full" type="always">
-              <div className="pr-4">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Input
-                        value={headerTitle}
-                        onChange={(e) => setHeaderTitle(e.target.value)}
-                        className="w-[200px]"
-                        placeholder="Enter title..."
-                      />
-                      <div className="flex items-center gap-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handlePrint}
-                          className="flex items-center gap-2"
-                        >
-                          <Printer className="h-4 w-4" />
-                          Print
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleExcelExport}
-                          className="flex items-center gap-2"
-                        >
-                          <FileSpreadsheet className="h-4 w-4" />
-                          Excel
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handlePdfExport}
-                          className="flex items-center gap-2"
-                        >
-                          <FileDown className="h-4 w-4" />
-                          PDF
-                        </Button>
-                      </div>
+            <ScrollArea className="h-[calc(90vh-12rem)] w-full" style={{ overflowX: 'auto', display: 'block' }} type="auto">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between pr-4">
+                    <Input
+                      value={headerTitle}
+                      onChange={(e) => setHeaderTitle(e.target.value)}
+                      className="w-[200px]"
+                      placeholder="Enter title..."
+                    />
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePrint}
+                        className="flex items-center gap-2"
+                      >
+                        <Printer className="h-4 w-4" />
+                        Print
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleExcelExport}
+                        className="flex items-center gap-2"
+                      >
+                        <FileSpreadsheet className="h-4 w-4" />
+                        Excel
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePdfExport}
+                        className="flex items-center gap-2"
+                      >
+                        <FileDown className="h-4 w-4" />
+                        PDF
+                      </Button>
                     </div>
-                    {/* <div className="text-sm text-muted-foreground">
-                      {Object.keys(groupedItems).length} unique items from {filePreviews.length} files
-                    </div> */}
-                    <div className="relative w-full overflow-auto">
-                      <div className="w-full overflow-auto">
-                        <table className="w-full rounded-md min-w-[800px] caption-bottom text-sm">
+                  </div>
+                  <div className="overflow-x-auto">
+                    <div className="inline-block min-w-full align-middle">
+                      <div className="overflow-hidden">
+                        <table className="min-w-[800px] w-full caption-bottom text-sm">
                           <thead>
                             <tr className="border rounded-md">
                               <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Article Number</th>
@@ -684,55 +681,55 @@ export function ImportOrdersModal({
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div>
-                    <Accordion type="single" collapsible defaultValue="">
-                      <AccordionItem value="original-files">
-                        <AccordionTrigger className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span>Original Files</span>
-                            <span className="text-sm text-muted-foreground">({filePreviews.length} files)</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {filePreviews.map((preview, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30"
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      checked={!disabledFiles.has(index)}
-                                      onChange={() => toggleFileEnabled(index)}
-                                      className="h-4 w-4 rounded border-gray-300"
-                                    />
-                                    <span className="font-medium truncate">
-                                      {preview.file.name}
-                                    </span>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6 shrink-0"
-                                      onClick={() => removeFile(index)}
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                  <div className="text-sm text-muted-foreground truncate">
-                                    Order: {preview.orderCode} • Customer: {preview.customerId}
-                                    {preview.date && ` • ${preview.date.toLocaleDateString('de-DE')}`}
-                                  </div>
+                <div>
+                  <Accordion type="single" collapsible defaultValue="">
+                    <AccordionItem value="original-files">
+                      <AccordionTrigger className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span>Original Files</span>
+                          <span className="text-sm text-muted-foreground">({filePreviews.length} files)</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {filePreviews.map((preview, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={!disabledFiles.has(index)}
+                                    onChange={() => toggleFileEnabled(index)}
+                                    className="h-4 w-4 rounded border-gray-300"
+                                  />
+                                  <span className="font-medium truncate">
+                                    {preview.file.name}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 shrink-0"
+                                    onClick={() => removeFile(index)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <div className="text-sm text-muted-foreground truncate">
+                                  Order: {preview.orderCode} • Customer: {preview.customerId}
+                                  {preview.date && ` • ${preview.date.toLocaleDateString('de-DE')}`}
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </div>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 </div>
               </div>
             </ScrollArea>
