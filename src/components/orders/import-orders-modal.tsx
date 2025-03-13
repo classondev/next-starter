@@ -368,6 +368,10 @@ export function ImportOrdersModal({
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
+    const fileColumns = filePreviews.map(preview => 
+      `<th class="text-right">${preview.orderCode}</th>`
+    ).join('');
+
     const tableContent = `
       <html>
         <head>
@@ -388,27 +392,30 @@ export function ImportOrdersModal({
                 <th>Article Number</th>
                 <th>Description</th>
                 <th class="text-right">Kt</th>
-                <!--<th class="text-right">Sack/Stk</th>
-                <th class="text-right">Price Net</th> -->
-                <th class="text-right">Tax</th>
-                <th>Order Code</th>
+                <th class="text-right">Sack/Stk</th>
+                ${fileColumns}
               </tr>
             </thead>
             <tbody>
-              ${Object.values(groupedItems).map(item => `
-                <tr>
-                  <td>${item.articleNumber}</td>
-                  <td>${item.description}</td>
-                  <td class="text-right">${item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}</td>
-                  <td class="text-right">
-                    ${item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity}` : ''}
-                    ${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2}` : ''}
-                  </td>
-                  <!--<td class="text-right">${new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet)}</td>
-                  <td class="text-right">${(item.tax * 100).toFixed(1)}%</td> -->
-                  <td>${[...new Set(item.sources.map(s => s.orderCode))].join(', ')}</td>
-                </tr>
-              `).join('')}
+              ${Object.values(groupedItems).map(item => {
+                const fileQuantities = filePreviews.map(preview => {
+                  const matchingItem = preview.items.find(i => i.articleNumber === item.articleNumber);
+                  return `<td class="text-right">${matchingItem ? matchingItem.quantity : ''}</td>`;
+                }).join('');
+
+                return `
+                  <tr>
+                    <td>${item.articleNumber}</td>
+                    <td>${item.description}</td>
+                    <td class="text-right">${item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}</td>
+                    <td class="text-right">
+                      ${item.unit.toLowerCase() !== 'kt' ? item.totalQuantity : ''}
+                      ${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2}` : ''}
+                    </td>
+                    ${fileQuantities}
+                  </tr>
+                `;
+              }).join('')}
             </tbody>
           </table>
         </body>
@@ -421,20 +428,36 @@ export function ImportOrdersModal({
   };
 
   const handleExcelExport = () => {
-    const worksheet = XLSX.utils.json_to_sheet(
-      Object.values(groupedItems).map(item => ({
+    // Create headers including all file columns
+    const headers = [
+      'Article Number',
+      'Description',
+      'Kt',
+      'Sack/Stk',
+      ...filePreviews.map(preview => preview.orderCode)
+    ];
+
+    // Create data rows
+    const data = Object.values(groupedItems).map(item => {
+      const baseData: Record<string, string | number> = {
         'Article Number': item.articleNumber,
         'Description': item.description,
         'Kt': item.unit.toLowerCase() === 'kt' ? item.totalQuantity : '',
         'Sack/Stk': item.unit.toLowerCase() !== 'kt' 
-          ? `${item.totalQuantity} ${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2}` : ''}`
-          : '',
-        'Price Net': item.priceNet,
-        'Tax': `${(item.tax * 100).toFixed(1)}%`,
-        'Order Code': [...new Set(item.sources.map(s => s.orderCode))].join(', ')
-      }))
-    );
+          ? `${item.totalQuantity}${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2}` : ''}`
+          : ''
+      };
 
+      // Add quantities for each file
+      filePreviews.forEach(preview => {
+        const matchingItem = preview.items.find(i => i.articleNumber === item.articleNumber);
+        baseData[preview.orderCode] = matchingItem ? matchingItem.quantity : '';
+      });
+
+      return baseData;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Grouped Items');
     XLSX.writeFile(workbook, 'grouped-items.xlsx');
@@ -442,29 +465,55 @@ export function ImportOrdersModal({
 
   const handlePdfExport = () => {
     try {
-      // Create new document
       const doc = new jsPDF();
       
-      // Add title
       doc.setFontSize(14);
       doc.text('Grouped Items by Article Number', 14, 15);
 
-      // Convert data for the table
-      const tableData = Object.values(groupedItems).map(item => [
-        item.articleNumber,
-        item.description,
-        item.unit.toLowerCase() === 'kt' ? item.totalQuantity.toString() : '',
-        item.unit.toLowerCase() !== 'kt' 
-          ? `${item.totalQuantity} ${item.unit}${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2} ${item.unit2}` : ''}`
-          : '',
-        new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet),
-        `${(item.tax * 100).toFixed(1)}%`,
-        [...new Set(item.sources.map(s => s.orderCode))].join(', ')
-      ]);
+      // Create headers including all file columns
+      const headers = [
+        'Article Number',
+        'Description',
+        'Kt',
+        'Sack/Stk',
+        ...filePreviews.map(preview => preview.orderCode)
+      ];
 
-      // Generate table using autoTable
+      // Create data rows
+      const tableData = Object.values(groupedItems).map(item => {
+        const baseData = [
+          item.articleNumber,
+          item.description,
+          item.unit.toLowerCase() === 'kt' ? item.totalQuantity.toString() : '',
+          item.unit.toLowerCase() !== 'kt' 
+            ? `${item.totalQuantity}${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2}` : ''}`
+            : ''
+        ];
+
+        // Add quantities for each file
+        filePreviews.forEach(preview => {
+          const matchingItem = preview.items.find(i => i.articleNumber === item.articleNumber);
+          baseData.push(matchingItem ? matchingItem.quantity.toString() : '');
+        });
+
+        return baseData;
+      });
+
+      // Calculate column widths based on content
+      const columnStyles: { [key: string]: Partial<unknown> } = {
+        0: { cellWidth: 30 }, // Article Number
+        1: { cellWidth: 'auto' }, // Description
+        2: { cellWidth: 20, halign: 'right' }, // Kt
+        3: { cellWidth: 30, halign: 'right' }, // Sack/Stk
+      };
+
+      // Add widths for file columns
+      filePreviews.forEach((_, index) => {
+        columnStyles[`${index + 4}`] = { cellWidth: 25, halign: 'right' };
+      });
+
       autoTable(doc, {
-        head: [['Article Number', 'Description', 'Kt', 'Sack/Stk', 'Price Net', 'Tax', 'Order Code']],
+        head: [headers],
         body: tableData,
         startY: 20,
         headStyles: { 
@@ -476,20 +525,11 @@ export function ImportOrdersModal({
         bodyStyles: {
           fontSize: 9
         },
-        columnStyles: {
-          0: { cellWidth: 30 }, // Article Number
-          1: { cellWidth: 'auto' }, // Description
-          2: { cellWidth: 20, halign: 'right' }, // Kt
-          3: { cellWidth: 30, halign: 'right' }, // Sack/Stk
-          4: { cellWidth: 25, halign: 'right' }, // Price Net
-          5: { cellWidth: 20, halign: 'right' }, // Tax
-          6: { cellWidth: 'auto' } // Order Code
-        },
+        columnStyles,
         theme: 'grid',
         margin: { top: 10 }
       });
 
-      // Save the PDF
       doc.save('grouped-items.pdf');
     } catch (error) {
       console.error('PDF generation error:', error);
