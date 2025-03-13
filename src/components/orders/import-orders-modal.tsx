@@ -397,6 +397,7 @@ export function ImportOrdersModal({
     const tableContent = `
       <html>
         <head>
+          <title>${headerTitle}</title>
           <style>
             body { font-family: Arial, sans-serif; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -656,7 +657,7 @@ export function ImportOrdersModal({
                                   {item.totalQuantity2 > 0 && ` / ${item.totalQuantity2}`}
                                 </td>
                                 { filePreviews.map((preview, index) => (
-                                  <td key={index} className="p-2 border bg-muted/50 text-muted-foreground align-middle text-right whitespace-nowrap">
+                                  !disabledFiles.has(index) && (<td key={index} className="p-2 border bg-muted/50 text-muted-foreground align-middle text-right whitespace-nowrap">
                                         {
                                           preview.items
                                             .filter((item1) => item.articleNumber === item1.articleNumber)
@@ -664,7 +665,7 @@ export function ImportOrdersModal({
                                               item.quantity
                                             ))
                                         }
-                                  </td>                                
+                                  </td>)                           
                                 ))}
                               </tr>
                             ))}
