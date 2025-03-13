@@ -388,8 +388,8 @@ export function ImportOrdersModal({
                 <th>Article Number</th>
                 <th>Description</th>
                 <th class="text-right">Kt</th>
-                <th class="text-right">Sack/Stk</th>
-                <th class="text-right">Price Net</th>
+                <!--<th class="text-right">Sack/Stk</th>
+                <th class="text-right">Price Net</th> -->
                 <th class="text-right">Tax</th>
                 <th>Order Code</th>
               </tr>
@@ -401,11 +401,11 @@ export function ImportOrdersModal({
                   <td>${item.description}</td>
                   <td class="text-right">${item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}</td>
                   <td class="text-right">
-                    ${item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity} ${item.unit}` : ''}
-                    ${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2} ${item.unit2}` : ''}
+                    ${item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity}` : ''}
+                    ${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2}` : ''}
                   </td>
-                  <td class="text-right">${new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet)}</td>
-                  <td class="text-right">${(item.tax * 100).toFixed(1)}%</td>
+                  <!--<td class="text-right">${new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet)}</td>
+                  <td class="text-right">${(item.tax * 100).toFixed(1)}%</td> -->
                   <td>${[...new Set(item.sources.map(s => s.orderCode))].join(', ')}</td>
                 </tr>
               `).join('')}
@@ -427,7 +427,7 @@ export function ImportOrdersModal({
         'Description': item.description,
         'Kt': item.unit.toLowerCase() === 'kt' ? item.totalQuantity : '',
         'Sack/Stk': item.unit.toLowerCase() !== 'kt' 
-          ? `${item.totalQuantity} ${item.unit}${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2} ${item.unit2}` : ''}`
+          ? `${item.totalQuantity} ${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2}` : ''}`
           : '',
         'Price Net': item.priceNet,
         'Tax': `${(item.tax * 100).toFixed(1)}%`,
@@ -506,23 +506,12 @@ export function ImportOrdersModal({
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Import Orders</DialogTitle>
-          <DialogDescription>
+          {/* <DialogDescription>
             Upload Excel files containing order data to import. Items with the same article number will be grouped together.
-          </DialogDescription>
+          </DialogDescription> */}
         </DialogHeader>
 
         <div className="flex flex-col gap-4 flex-1 overflow-hidden">
-          <div className="flex items-center gap-4">
-            <Input
-              ref={fileInputRef}
-              type="file"
-              onChange={handleFileSelect}
-              accept=".xlsx,.xls"
-              multiple
-              className="flex-1"
-            />
-          </div>
-
           {filePreviews.length > 0 && (
             <ScrollArea className="flex-1 border rounded-md p-4">
               <div className="space-y-6">
@@ -559,9 +548,9 @@ export function ImportOrdersModal({
                       </Button>
                     </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  {/* <div className="text-sm text-muted-foreground">
                     {Object.keys(groupedItems).length} unique items from {filePreviews.length} files
-                  </div>
+                  </div> */}
                   <div className="relative w-full overflow-auto">
                     <div className="w-full overflow-auto">
                       <table className="w-full min-w-[800px] caption-bottom text-sm">
@@ -571,9 +560,12 @@ export function ImportOrdersModal({
                             <th className="h-10 px-2 text-left align-middle font-medium whitespace-nowrap">Description</th>
                             <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Kt</th>
                             <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Sack/Stk</th>
-                            <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Price Net</th>
-                            <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Tax</th>
-                            <th className="h-10 px-2 text-left align-middle font-medium whitespace-nowrap">Order Code</th>
+                            {/* <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Price Net</th>
+                            <th className="h-10 px-2 text-right align-middle font-medium whitespace-nowrap">Tax</th> */}
+                            { filePreviews.map((preview, index) => (
+                              <th key={index} className="h-10 px-2 text-left align-middle font-medium whitespace-nowrap">{preview.orderCode}</th>
+                            ))}
+                           
                           </tr>
                         </thead>
                         <tbody>
@@ -588,18 +580,24 @@ export function ImportOrdersModal({
                                 {item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}
                               </td>
                               <td className="p-2 align-middle text-right whitespace-nowrap">
-                                {item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity} ${item.unit}` : ''}
-                                {item.totalQuantity2 > 0 && ` / ${item.totalQuantity2} ${item.unit2}`}
+                                {item.unit.toLowerCase() !== 'kt' ? `${item.totalQuantity}` : ''}
+                                {item.totalQuantity2 > 0 && ` / ${item.totalQuantity2}`}
                               </td>
-                              <td className="p-2 align-middle text-right whitespace-nowrap">
+                              {/* <td className="p-2 align-middle text-right whitespace-nowrap">
                                 {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(item.priceNet)}
                               </td>
                               <td className="p-2 align-middle text-right whitespace-nowrap">
                                 {(item.tax * 100).toFixed(1)}%
-                              </td>
-                              <td className="p-2 align-middle whitespace-nowrap">
-                                {[...new Set(item.sources.map(s => s.orderCode))].join(', ')}
-                              </td>
+                              </td> */}
+                              { filePreviews.map((preview, index) => (
+                                preview.items
+                                  .filter((item1) => item.articleNumber === item1.articleNumber)
+                                  .map((item) => (
+                                  <td key={index} className="p-2 text-muted-foreground align-middle text-right whitespace-nowrap">
+                                    {item.quantity}
+                                  </td>
+                                ))
+                              ))}
                             </tr>
                           ))}
                         </tbody>
@@ -656,16 +654,28 @@ export function ImportOrdersModal({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleImport} disabled={isLoading || selectedFiles.length === 0}>
-            {isLoading ? 'Importing...' : 'Import'}
-          </Button>
+          <div className="flex w-full items-center justify-between">
+            <Input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileSelect}
+              accept=".xlsx,.xls,.pdf"
+              multiple
+              className="w-[400px]"
+            />
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleImport} disabled={isLoading || selectedFiles.length === 0}>
+                {isLoading ? 'Importing...' : 'Import'}
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,121 +1,54 @@
 'use client'
 
+import { useState } from 'react'
+import { Moon, Sun } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Settings, Check } from 'lucide-react'
-import { useTheme } from 'next-themes'
-import { useLanguage } from '@/i18n/LanguageProvider'
-import { languageNames, locales, ValidLocale } from '@/i18n/settings'
-import { useTranslation } from '@/i18n/useTranslation'
-
-// Language icons mapping
-const languageIcons: Record<string, string> = {
-  en: '🇬🇧',
-  de: '🇩🇪',
-  vi: '🇻🇳',
-}
+import { LanguageSwitcherModal } from './language-switcher-modal'
 
 export function SettingsMenu() {
+  const [languageModalOpen, setLanguageModalOpen] = useState(false)
   const { theme, setTheme } = useTheme()
-  const { locale, setLocale } = useLanguage()
-  const { t } = useTranslation(locale)
 
-  console.log('Current locale:', locale)
-  console.log('Available locales:', locales)
-  console.log('Language names:', languageNames)
-
-  const handleLanguageChange = (newLocale: ValidLocale) => {
-    console.log('Changing language to:', newLocale)
-    setLocale(newLocale)
-    console.log('Language changed, new locale:', newLocale)
-  }
-
-  const handleThemeChange = (newTheme: string) => {
-    console.log('Changing theme to:', newTheme)
-    setTheme(newTheme)
-  }
-
-  console.log('Rendering SettingsMenu with theme:', theme)
+  console.log('Current theme:', theme)
+  console.log('Language modal open:', languageModalOpen)
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9">
-          <Settings className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[200px]" onCloseAutoFocus={(e) => e.preventDefault()}>
-        <DropdownMenuLabel>{t('settings.title')}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuLabel className="font-normal">
-          {t('settings.language')} ({languageIcons[locale]})
-        </DropdownMenuLabel>
-        {locales.map((loc) => {
-          console.log('Rendering language option:', loc)
-          return (
-            <DropdownMenuItem
-              key={loc}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleLanguageChange(loc)
-              }}
-              className="cursor-pointer"
-            >
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <span>{languageIcons[loc]}</span>
-                  <span>{languageNames[loc]}</span>
-                </div>
-                {locale === loc && (
-                  <Check className="h-4 w-4 ml-2" />
-                )}
-              </div>
-            </DropdownMenuItem>
-          )
-        })}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Toggle theme</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => setLanguageModalOpen(true)}>
+            Language
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme('light')}>
+            Light
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme('dark')}>
+            Dark
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme('system')}>
+            System
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuLabel className="font-normal">
-          {t('settings.theme')}
-        </DropdownMenuLabel>
-        <DropdownMenuItem 
-          onClick={() => handleThemeChange('light')}
-          className="cursor-pointer"
-        >
-          <div className="flex items-center justify-between w-full">
-            <span>{t('settings.light')}</span>
-            {theme === 'light' && <Check className="h-4 w-4 ml-2" />}
-          </div>
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => handleThemeChange('dark')}
-          className="cursor-pointer"
-        >
-          <div className="flex items-center justify-between w-full">
-            <span>{t('settings.dark')}</span>
-            {theme === 'dark' && <Check className="h-4 w-4 ml-2" />}
-          </div>
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => handleThemeChange('system')}
-          className="cursor-pointer"
-        >
-          <div className="flex items-center justify-between w-full">
-            <span>{t('settings.system')}</span>
-            {theme === 'system' && <Check className="h-4 w-4 ml-2" />}
-          </div>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      <LanguageSwitcherModal 
+        open={languageModalOpen}
+        onOpenChange={setLanguageModalOpen}
+      />
+    </>
   )
 } 
