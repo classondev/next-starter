@@ -32,6 +32,14 @@ declare module 'jspdf' {
   }
 }
 
+const showDescription = (description: string, separator: string = '...') => {
+  const arr = description.split(separator);
+  if (arr.length > 1) {
+    return arr[0].trim() + '<br/><span style="font-size: 12px; padding-top: 2px; color: gray;">' + arr[1].trim() + '</span>';
+  }
+  return description;
+}
+
 // Add helper function for date conversion
 const convertTextToDate = (dateText: string): Date => {
   console.log('Converting date text:', dateText);
@@ -403,7 +411,7 @@ export function ImportOrdersModal({
     const enabledPreviews = filePreviews.filter((_, index) => !disabledFiles.has(index));
     
     const fileColumns = enabledPreviews.map(preview => 
-      `<th class="text-right">${preview.orderCode}</th>`
+      `<th class="text-right text-xs"><div style="width: 40px; writing-mode: vertical-rl; transform: rotate(180deg);">${preview.orderCode}</div></th>`
     ).join('');
 
     const tableContent = `
@@ -426,26 +434,28 @@ export function ImportOrdersModal({
                 <th>Article Number</th>
                 <th>Description</th>
                 <th class="text-right">Kt</th>
-                <th class="text-right">Sack/Stk</th>
+                <th class="text-right">Stk.</th>
                 ${fileColumns}
+                <th>Note</th>
               </tr>
             </thead>
             <tbody>
               ${Object.values(groupedItems).map(item => {
                 const fileQuantities = enabledPreviews.map(preview => {
                   const matchingItem = preview.items.find(i => i.articleNumber === item.articleNumber);
-                  return `<td class="text-right">${matchingItem ? matchingItem.quantity : ''}</td>`;
+                  return `<td class="text-right" style="width:50px">${matchingItem ? matchingItem.quantity : ''}</td>`;
                 }).join('');
 
                 return `
                   <tr>
-                    <td>${item.articleNumber}</td>
-                    <td>${item.description}</td>
-                    <td class="text-right">${item.unit.toLowerCase() === 'kt' ? item.totalQuantity : ''}</td>
-                    <td class="text-right">
-                      ${item.unit.toLowerCase() !== 'kt' ? item.totalQuantity : (item.totalQuantity2 > 0 ? item.totalQuantity2 : '')}
+                    <td class="text-xs" style="width:10%">${item.articleNumber}</td>
+                    <td class="text-xs" style="width:30%">${showDescription(item.description)}</td>
+                    <td class="text-right text-xs" style="width:50px">${item.totalQuantity2}</td>
+                    <td class="text-right text-xs" style="width:50px">
+                      ${item.totalQuantity}
                     </td>
                     ${fileQuantities}
+                    <td></td>
                   </tr>
                 `;
               }).join('')}
@@ -468,7 +478,7 @@ export function ImportOrdersModal({
       'Article Number',
       'Description',
       'Kt',
-      'Sack/Stk',
+      'Stk.',
       ...enabledPreviews.map(preview => preview.orderCode)
     ];
 
@@ -477,10 +487,8 @@ export function ImportOrdersModal({
       const baseData: Record<string, string | number> = {
         'Article Number': item.articleNumber,
         'Description': item.description,
-        'Kt': item.unit.toLowerCase() === 'kt' ? item.totalQuantity : '',
-        'Sack/Stk': item.unit.toLowerCase() !== 'kt' 
-          ? `${item.totalQuantity}${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2}` : ''}`
-          : ''
+        'Kt': item.totalQuantity2,
+        'Stk.': item.totalQuantity
       };
 
       // Add quantities for each enabled file
@@ -512,8 +520,9 @@ export function ImportOrdersModal({
         'Article Number',
         'Description',
         'Kt',
-        'Sack/Stk',
-        ...enabledPreviews.map(preview => preview.orderCode)
+        'Stk.',
+        ...enabledPreviews.map(preview => preview.orderCode),
+        'Note'
       ];
 
       // Create data rows
@@ -521,10 +530,8 @@ export function ImportOrdersModal({
         const baseData = [
           item.articleNumber,
           item.description,
-          item.unit.toLowerCase() === 'kt' ? item.totalQuantity.toString() : '',
-          item.unit.toLowerCase() !== 'kt' 
-            ? `${item.totalQuantity}${item.totalQuantity2 > 0 ? ` / ${item.totalQuantity2}` : ''}`
-            : ''
+          item.totalQuantity2,
+          item.totalQuantity
         ];
 
         // Add quantities for each enabled file
@@ -538,16 +545,18 @@ export function ImportOrdersModal({
 
       // Calculate column widths based on content
       const columnStyles: { [key: string]: Partial<unknown> } = {
-        0: { cellWidth: 30 }, // Article Number
+        0: { cellWidth: 20 }, // Article Number
         1: { cellWidth: 'auto' }, // Description
-        2: { cellWidth: 20, halign: 'right' }, // Kt
-        3: { cellWidth: 30, halign: 'right' }, // Sack/Stk
+        2: { cellWidth: 10, halign: 'right' }, // Kt
+        3: { cellWidth: 10, halign: 'right' }, // Stk.
       };
 
       // Add widths for file columns
       enabledPreviews.forEach((_, index) => {
-        columnStyles[`${index + 4}`] = { cellWidth: 25, halign: 'right' };
+        columnStyles[`${index + 4}`] = { cellWidth: 10, halign: 'right' };
       });
+
+      columnStyles[`${enabledPreviews.length + 4}`] = { cellWidth: 'auto' };
 
       autoTable(doc, {
         head: [headers],
@@ -580,7 +589,7 @@ export function ImportOrdersModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[90vw] w-[90vw] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Import Orders</DialogTitle>
           {/* <DialogDescription>
@@ -590,14 +599,14 @@ export function ImportOrdersModal({
 
         <div className="flex-1 min-h-0 overflow-hidden">
           {filePreviews.length > 0 && (
-            <ScrollArea className="h-[calc(90vh-12rem)] w-full" style={{ overflowX: 'auto', display: 'block' }} type="auto">
+            <ScrollArea className="h-[calc(90vh-12rem)] w-full pr-3" style={{ overflowX: 'auto', display: 'block' }} type="auto">
               <div className="space-y-6">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between pr-4">
                     <Input
                       value={headerTitle}
                       onChange={(e) => setHeaderTitle(e.target.value)}
-                      className="w-[200px]"
+                      className="w-[300]"
                       placeholder="Enter title..."
                     />
                     <div className="flex items-center gap-4">
@@ -639,11 +648,11 @@ export function ImportOrdersModal({
                               <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Article Number</th>
                               <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Description</th>
                               <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Kt</th>
-                              <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Sack/Stk</th>
+                              <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Stk.</th>
                               { filePreviews.map((preview, index) => (
                                 !disabledFiles.has(index) && (
-                                  <th key={index} className="h-10 border rounded-md px-2 text-right align-middle font-medium whitespace-nowrap">
-                                    {preview.orderCode}
+                                  <th key={index} className="h-10 border rounded-md px-2 text-right align-middle font-medium whitespace-nowrap" style={{ width: '50px' }}>
+                                    <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{preview.orderCode}</div>
                                   </th>
                                 )
                               ))}
@@ -655,23 +664,22 @@ export function ImportOrdersModal({
                                 key={item.articleNumber}
                                 className="border transition-colors hover:bg-muted/50"
                               >
-                                <td className="p-2 border align-middle font-medium whitespace-nowrap">{item.articleNumber}</td>
-                                <td className="p-2 border align-middle whitespace-nowrap">{ item.description }</td>
-                                <td className="p-2 border align-middle text-right whitespace-nowrap">
+                                <td className="p-2 border align-middle font-medium whitespace-nowrap" style={{ width: '20px' }}>{item.articleNumber}</td>
+                                <td className="p-2 border align-middle whitespace-nowrap" style={{ width: '200px' }} dangerouslySetInnerHTML={{ __html: showDescription(item.description) }}></td>
+                                <td className="p-2 border align-middle text-right whitespace-nowrap" style={{ width: '50px' }}>
                                   {item.totalQuantity2}
                                 </td>
-                                <td className="p-2 border align-middle text-right whitespace-nowrap">
+                                <td className="p-2 border align-middle text-right whitespace-nowrap" style={{ width: '50px' }}>
                                   {item.totalQuantity}
                                 </td>
                                 { filePreviews.map((preview, index) => (
-                                  !disabledFiles.has(index) && (<td key={index} className="p-2 border bg-muted/50 text-muted-foreground align-middle text-right whitespace-nowrap">
-                                        {
+                                  !disabledFiles.has(index) && (<td key={index} className="p-2 border bg-muted/50 text-muted-foreground align-middle text-right whitespace-nowrap" dangerouslySetInnerHTML={{ __html:
                                           preview.items
                                             .filter((item1) => item.articleNumber === item1.articleNumber)
                                             .map((item) => (
-                                              `${item.quantity}${item.quantity2 > 0 ? ` / ${item.quantity2} Kt` : ''}`
+                                              `${item.quantity}${item.quantity2 > 0 ? ` <br/><span style="font-size: 12px; color: gray;">${item.quantity2} Kt</span>` : ''}`
                                             ))
-                                        }
+                                        }}>
                                   </td>)                           
                                 ))}
                               </tr>
