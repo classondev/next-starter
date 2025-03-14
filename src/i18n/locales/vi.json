@@ -9,7 +9,27 @@
     "save": "Lưu",
     "loading": "Đang tải...",
     "noData": "Không có dữ liệu",
-    "retry": "Thử lại"
+    "retry": "Thử lại",
+    "close": "Đóng",
+    "print": "In",
+    "export": {
+      "excel": "Excel",
+      "pdf": "PDF"
+    },
+    "files": "tệp"
+  },
+  "nav": {
+    "store": "Cửa hàng",
+    "dashboard": "Bảng điều khiển",
+    "products": "Sản phẩm",
+    "orders": "Đơn hàng",
+    "analytics": "Phân tích",
+    "users": "Người dùng",
+    "content": "Nội dung",
+    "settings": "Cài đặt",
+    "workspace": "Không gian làm việc",
+    "change": "Thay đổi",
+    "upgrade": "Nâng cấp"
   },
   "settings": {
     "title": "Cài đặt",
@@ -35,6 +55,26 @@
     "code": "Mã",
     "customerId": "Mã khách hàng",
     "createdAt": "Ngày tạo",
-    "createdBy": "Người tạo"
+    "createdBy": "Người tạo",
+    "note": "Ghi chú",
+    "details": {
+      "title": "Chi tiết đơn hàng",
+      "information": "Thông tin đơn hàng",
+      "items": "Danh sách sản phẩm",
+      "orderCode": "Mã đơn hàng",
+      "articleNumber": "Mã sản phẩm",
+      "description": "Mô tả",
+      "productName": "Tên sản phẩm",
+      "quantity": "Số lượng",
+      "unit": "Đơn vị",
+      "priceNet": "Giá (Chưa thuế)",
+      "tax": "Thuế (%)",
+      "kt": "Kt",
+      "stk": "Stk.",
+      "enterTitle": "Nhập tiêu đề...",
+      "originalFiles": "Tệp gốc",
+      "order": "Đơn hàng",
+      "customer": "Khách hàng"
+    }
   }
 } 

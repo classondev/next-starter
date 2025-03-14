@@ -9,7 +9,27 @@
     "save": "Speichern",
     "loading": "Laden...",
     "noData": "Keine Daten verfügbar",
-    "retry": "Erneut versuchen"
+    "retry": "Erneut versuchen",
+    "close": "Schließen",
+    "print": "Drucken",
+    "export": {
+      "excel": "Excel",
+      "pdf": "PDF"
+    },
+    "files": "Dateien"
+  },
+  "nav": {
+    "store": "Shop",
+    "dashboard": "Dashboard",
+    "products": "Produkte",
+    "orders": "Bestellungen",
+    "analytics": "Analysen",
+    "users": "Benutzer",
+    "content": "Inhalt",
+    "settings": "Einstellungen",
+    "workspace": "Arbeitsbereich",
+    "change": "Ändern",
+    "upgrade": "Upgrade"
   },
   "settings": {
     "title": "Einstellungen",
@@ -40,6 +60,26 @@
     "code": "Code",
     "customerId": "Kundennummer",
     "createdAt": "Erstellt am",
-    "createdBy": "Erstellt von"
+    "createdBy": "Erstellt von",
+    "note": "Notiz",
+    "details": {
+      "title": "Bestelldetails",
+      "information": "Bestellinformationen",
+      "items": "Bestellpositionen",
+      "orderCode": "Bestellnummer",
+      "articleNumber": "Artikelnummer",
+      "description": "Beschreibung",
+      "productName": "Produktname",
+      "quantity": "Menge",
+      "unit": "Einheit",
+      "priceNet": "Preis (Netto)",
+      "tax": "MwSt. (%)",
+      "kt": "Kt",
+      "stk": "Stk.",
+      "enterTitle": "Titel eingeben...",
+      "originalFiles": "Originaldateien",
+      "order": "Bestellung",
+      "customer": "Kunde"
+    }
   }
 } 

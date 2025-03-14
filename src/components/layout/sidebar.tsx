@@ -16,48 +16,59 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useLanguage } from '@/i18n/LanguageProvider';
+import { useTranslation, TranslationPath } from '@/i18n/useTranslation';
+import { LucideIcon } from 'lucide-react';
 
-const menuItems = [
+interface MenuItem {
+  titleKey: TranslationPath;
+  icon: LucideIcon;
+  href: string;
+}
+
+const menuItems: MenuItem[] = [
   {
-    title: "Dashboard",
+    titleKey: "nav.dashboard",
     icon: LayoutGrid,
     href: "/admin/dashboard",
   },
   {
-    title: "Products",
+    titleKey: "nav.products",
     icon: Package,
     href: "/admin/products",
   },
   {
-    title: "Orders",
+    titleKey: "nav.orders",
     icon: ShoppingCart,
     href: "/admin/orders",
   },
   {
-    title: "Analytics",
+    titleKey: "nav.analytics",
     icon: BarChart,
     href: "/admin/analytics",
   },
   {
-    title: "Users",
+    titleKey: "nav.users",
     icon: Users,
     href: "/admin/users",
   },
   {
-    title: "Content",
+    titleKey: "nav.content",
     icon: FileText,
     href: "/admin/content",
   },
   {
-    title: "Settings",
+    titleKey: "nav.settings",
     icon: Settings,
     href: "/admin/settings",
   },
-];
+] as const;
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const { locale } = useLanguage();
+  const { t } = useTranslation(locale);
 
   return (
     <div
@@ -70,7 +81,7 @@ export function Sidebar() {
         {!collapsed && (
           <div className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            <span className="font-semibold text-sm">Store</span>
+            <span className="font-semibold text-sm">{t('nav.store')}</span>
           </div>
         )}
         <Button
@@ -100,7 +111,7 @@ export function Sidebar() {
               )}
             >
               <item.icon className="h-4 w-4" />
-              {!collapsed && <span>{item.title}</span>}
+              {!collapsed && <span>{t(item.titleKey)}</span>}
             </Link>
           ))}
         </nav>
@@ -110,10 +121,10 @@ export function Sidebar() {
         <div className={cn("space-y-2", collapsed && "flex flex-col items-center")}>
           {!collapsed && (
             <>
-              <div className="text-xs text-muted-foreground px-2">Workspace</div>
+              <div className="text-xs text-muted-foreground px-2">{t('nav.workspace')}</div>
               <Button variant="outline" className="w-full justify-start gap-2 text-sm h-8">
                 <Building2 className="h-4 w-4" />
-                Change
+                {t('nav.change')}
               </Button>
             </>
           )}
@@ -125,7 +136,7 @@ export function Sidebar() {
             )}
           >
             <Star className="h-4 w-4" />
-            {!collapsed && "Upgrade"}
+            {!collapsed && t('nav.upgrade')}
           </Button>
         </div>
       </div>

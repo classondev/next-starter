@@ -9,7 +9,27 @@
     "save": "Save",
     "loading": "Loading...",
     "noData": "No data available",
-    "retry": "Try Again"
+    "retry": "Try Again",
+    "close": "Close",
+    "print": "Print",
+    "export": {
+      "excel": "Excel",
+      "pdf": "PDF"
+    },
+    "files": "files"
+  },
+  "nav": {
+    "store": "Store",
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "orders": "Orders",
+    "analytics": "Analytics",
+    "users": "Users",
+    "content": "Content",
+    "settings": "Settings",
+    "workspace": "Workspace",
+    "change": "Change",
+    "upgrade": "Upgrade"
   },
   "settings": {
     "title": "Settings",
@@ -40,6 +60,26 @@
     "code": "Code",
     "customerId": "Customer ID",
     "createdAt": "Created At",
-    "createdBy": "Created By"
+    "createdBy": "Created By",
+    "note": "Note",
+    "details": {
+      "title": "Order Details",
+      "information": "Order Information",
+      "items": "Order Items",
+      "orderCode": "Order Code",
+      "articleNumber": "Article Number",
+      "description": "Description",
+      "productName": "Product Name",
+      "quantity": "Quantity",
+      "unit": "Unit",
+      "priceNet": "Price (Net)",
+      "tax": "Tax (%)",
+      "kt": "Kt",
+      "stk": "Stk.",
+      "enterTitle": "Enter title...",
+      "originalFiles": "Original Files",
+      "order": "Order",
+      "customer": "Customer"
+    }
   }
 } 
