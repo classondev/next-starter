@@ -17,7 +17,12 @@
       "pdf": "PDF"
     },
     "files": "files",
-    "error": "Error"
+    "error": "Error",
+    "previous": "Previous",
+    "next": "Next",
+    "rows": "rows",
+    "totalRows": "row(s) total",
+    "noResults": "No results."
   },
   "nav": {
     "store": "Store",
@@ -49,6 +54,23 @@
     "title": "Products",
     "searchPlaceholder": "Search products...",
     "importProducts": "Import Products",
+    "addProduct": "Add Product",
+    "loadError": "Failed to load products",
+    "loading": "Loading products...",
+    "columns": {
+      "articleNumber": "Article #",
+      "name": "Name",
+      "category": "Category",
+      "stock": "Stock",
+      "priceNet": "Price Net",
+      "priceGross": "Price Gross",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled"
+    },
     "newProduct": "New Product",
     "noProducts": "No products found. Import some products to get started."
   },

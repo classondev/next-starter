@@ -16,7 +16,13 @@
       "excel": "Excel",
       "pdf": "PDF"
     },
-    "files": "Dateien"
+    "files": "Dateien",
+    "error": "Fehler",
+    "noResults": "Keine Ergebnisse",
+    "rows": "Zeilen",
+    "totalRows": "Gesamtzeilen",
+    "previous": "Vorherige",
+    "next": "Nächste"
   },
   "nav": {
     "store": "Shop",
@@ -48,6 +54,23 @@
     "title": "Produkte",
     "searchPlaceholder": "Produkte suchen...",
     "importProducts": "Produkte importieren",
+    "addProduct": "Produkt hinzufügen",
+    "loadError": "Fehler beim Laden der Produkte",
+    "loading": "Produkte werden geladen...",
+    "columns": {
+      "articleNumber": "Artikelnummer",
+      "name": "Name",
+      "category": "Kategorie",
+      "stock": "Lagerbestand",
+      "priceNet": "Preis (Netto)",
+      "priceGross": "Preis (Brutto)",
+      "status": "Status",
+      "actions": "Aktionen"
+    },
+    "status": {
+      "active": "Aktiv",
+      "disabled": "Deaktiviert"
+    },
     "newProduct": "Neues Produkt",
     "noProducts": "Keine Produkte gefunden. Importieren Sie Produkte, um zu beginnen."
   },

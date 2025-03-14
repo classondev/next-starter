@@ -16,7 +16,13 @@
       "excel": "Excel",
       "pdf": "PDF"
     },
-    "files": "tệp"
+    "files": "tệp",
+    "error": "Lỗi",
+    "noResults": "Không có kết quả",
+    "rows": "Dòng",
+    "totalRows": "Tổng số dòng",
+    "previous": "Trước",
+    "next": "Tiếp"
   },
   "nav": {
     "store": "Cửa hàng",
@@ -43,6 +49,23 @@
     "title": "Sản phẩm",
     "searchPlaceholder": "Tìm kiếm sản phẩm...",
     "importProducts": "Nhập sản phẩm",
+    "addProduct": "Thêm sản phẩm",
+    "loadError": "Không thể tải sản phẩm",
+    "loading": "Đang tải sản phẩm...",
+    "columns": {
+      "articleNumber": "Mã sản phẩm",
+      "name": "Tên",
+      "category": "Danh mục",
+      "stock": "Tồn kho",
+      "priceNet": "Giá (Chưa thuế)",
+      "priceGross": "Giá (Đã thuế)",
+      "status": "Trạng thái",
+      "actions": "Thao tác"
+    },
+    "status": {
+      "active": "Hoạt động",
+      "disabled": "Vô hiệu"
+    },
     "newProduct": "Thêm sản phẩm",
     "noProducts": "Không tìm thấy sản phẩm nào. Hãy nhập sản phẩm để bắt đầu."
   },

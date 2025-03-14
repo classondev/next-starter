@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from '@/i18n/LanguageProvider';
 import { useTranslation, TranslationPath } from '@/i18n/useTranslation';
 import { LucideIcon } from 'lucide-react';
@@ -66,9 +66,25 @@ const menuItems: MenuItem[] = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { locale } = useLanguage();
   const { t } = useTranslation(locale);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="flex flex-col border-r bg-background w-56">
+        <div className="h-14 border-b"></div>
+        <div className="flex-1"></div>
+        <div className="border-t p-2"></div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/table";
 import { Product } from "@/db/schema";
 import { formatCurrency } from "@/lib/utils";
+import { useLanguage } from '@/i18n/LanguageProvider';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -45,6 +47,8 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const { locale } = useLanguage();
+  const { t } = useTranslation(locale);
   
   const table = useReactTable({
     data,
@@ -104,7 +108,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {t('common.noResults')}
                 </TableCell>
               </TableRow>
             )}
@@ -121,18 +125,18 @@ export function DataTable<TData, TValue>({
             }}
           >
             <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Select size" />
+              <SelectValue placeholder={t('common.rows')} />
             </SelectTrigger>
             <SelectContent>
               {[10, 20, 30, 40, 50].map((pageSize) => (
                 <SelectItem key={pageSize} value={pageSize.toString()}>
-                  {pageSize} rows
+                  {pageSize} {t('common.rows')}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <div className="text-sm text-muted-foreground">
-            {table.getFilteredRowModel().rows.length} row(s) total
+            {table.getFilteredRowModel().rows.length} {t('common.totalRows')}
           </div>
         </div>
         <div className="space-x-2">
@@ -142,7 +146,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            {t('common.previous')}
           </Button>
           <Button
             variant="outline"
@@ -150,7 +154,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            {t('common.next')}
           </Button>
         </div>
       </div>

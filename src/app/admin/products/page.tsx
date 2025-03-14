@@ -23,9 +23,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { Product } from "@/db/schema";
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { DataTable } from "@/components/products/products-table";
-import { columns } from "@/components/products/columns";
+import { getColumns } from "@/components/products/columns";
 import { ImportModal } from "@/components/products/ImportModal";
 import { Input } from "@/components/ui/input";
+import { useLanguage } from '@/i18n/LanguageProvider';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Custom hook for debouncing values
 function useDebounce<T>(value: T, delay: number = 500): T {
@@ -67,7 +69,11 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery);
   const { toast } = useToast();
+  const { locale } = useLanguage();
+  const { t } = useTranslation(locale);
   
+  const columns = getColumns(locale);
+
   const { data: products = [], isLoading, isError, error, refetch } = useQuery<Product[], Error>({
     queryKey: ["products", debouncedSearchQuery],
     queryFn: () => getProducts(debouncedSearchQuery),
@@ -77,16 +83,16 @@ export default function ProductsPage() {
 
   if (isError) {
     toast({
-      title: "Error",
-      description: "Failed to load products. Please try again.",
+      title: t('common.error'),
+      description: t('products.loadError'),
       variant: "destructive",
     });
     
     return (
       <div className="p-4">
         <div className="flex flex-col justify-center items-center h-64 space-y-4">
-          <div className="text-lg text-red-600">Failed to load products</div>
-          <Button onClick={() => refetch()}>Try Again</Button>
+          <div className="text-lg text-red-600">{t('products.loadError')}</div>
+          <Button onClick={() => refetch()}>{t('common.retry')}</Button>
         </div>
       </div>
     );
@@ -96,7 +102,7 @@ export default function ProductsPage() {
     return (
       <div className="p-4">
         <div className="flex justify-center items-center h-64">
-          <div className="text-lg">Loading products...</div>
+          <div className="text-lg">{t('products.loading')}</div>
         </div>
       </div>
     );
@@ -106,7 +112,6 @@ export default function ProductsPage() {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between gap-4">
         <Input
-          placeholder="Search products..."
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           className="max-w-xs"
@@ -117,9 +122,9 @@ export default function ProductsPage() {
             onClick={() => setImportModalOpen(true)}
             size="sm"
           >
-            Import Products
+            {t('products.importProducts')}
           </Button>
-          <Button size="sm">Add Product</Button>
+          <Button size="sm">{t('products.addProduct')}</Button>
         </div>
       </div>
       
