@@ -16,7 +16,8 @@
       "excel": "Excel",
       "pdf": "PDF"
     },
-    "files": "files"
+    "files": "files",
+    "error": "Error"
   },
   "nav": {
     "store": "Store",
@@ -79,7 +80,8 @@
       "enterTitle": "Enter title...",
       "originalFiles": "Original Files",
       "order": "Order",
-      "customer": "Customer"
+      "customer": "Customer",
+      "exportError": "Failed to generate PDF. Please try again."
     }
   }
 } 

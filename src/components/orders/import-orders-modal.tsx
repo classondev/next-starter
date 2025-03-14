@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/accordion";
 import { parseNumber } from '@/lib/utils';
 import { EditableCell } from '../EditableCell';
+import { useLanguage } from '@/i18n/LanguageProvider';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -141,6 +143,8 @@ export function ImportOrdersModal({
   const [headerTitle, setHeaderTitle] = useState<string>(new Date().toLocaleDateString('de-DE'));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { locale } = useLanguage();
+  const { t } = useTranslation(locale);
 
   // Update groupedItems when filePreviews or disabledFiles changes
   useEffect(() => {
@@ -432,12 +436,12 @@ export function ImportOrdersModal({
           <table>
             <thead>
               <tr>
-                <th>Article Number</th>
-                <th>Description</th>
-                <th class="text-right">Kt</th>
-                <th class="text-right">Stk.</th>
+                <th>${t('orders.details.articleNumber')}</th>
+                <th>${t('orders.details.description')}</th>
+                <th class="text-right">${t('orders.details.kt')}</th>
+                <th class="text-right">${t('orders.details.stk')}</th>
                 ${fileColumns}
-                <th>Note</th>
+                <th>${t('orders.note')}</th>
               </tr>
             </thead>
             <tbody>
@@ -476,20 +480,20 @@ export function ImportOrdersModal({
 
     // Create headers including all file columns
     const headers = [
-      'Article Number',
-      'Description',
-      'Kt',
-      'Stk.',
+      t('orders.details.articleNumber'),
+      t('orders.details.description'),
+      t('orders.details.kt'),
+      t('orders.details.stk'),
       ...enabledPreviews.map(preview => preview.orderCode)
     ];
 
     // Create data rows
     const data = Object.values(groupedItems).map(item => {
       const baseData: Record<string, string | number> = {
-        'Article Number': item.articleNumber,
-        'Description': item.description,
-        'Kt': item.totalQuantity2,
-        'Stk.': item.totalQuantity
+        [t('orders.details.articleNumber')]: item.articleNumber,
+        [t('orders.details.description')]: item.description,
+        [t('orders.details.kt')]: item.totalQuantity2,
+        [t('orders.details.stk')]: item.totalQuantity
       };
 
       // Add quantities for each enabled file
@@ -518,12 +522,12 @@ export function ImportOrdersModal({
 
       // Create headers including all file columns
       const headers = [
-        'Article Number',
-        'Description',
-        'Kt',
-        'Stk.',
+        t('orders.details.articleNumber'),
+        t('orders.details.description'),
+        t('orders.details.kt'),
+        t('orders.details.stk'),
         ...enabledPreviews.map(preview => preview.orderCode),
-        'Note'
+        t('orders.note')
       ];
 
       // Create data rows
@@ -577,12 +581,12 @@ export function ImportOrdersModal({
         margin: { top: 10 }
       });
 
-      doc.save('grouped-items.pdf');
+      doc.save(`${headerTitle}.pdf`);
     } catch (error) {
       console.error('PDF generation error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to generate PDF. Please try again.',
+        title: t('common.error'),
+        description: t('orders.details.exportError'),
         variant: 'destructive',
       });
     }
@@ -619,7 +623,7 @@ export function ImportOrdersModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[90vw] w-[90vw] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Import Orders</DialogTitle>
+          <DialogTitle>{t('orders.importOrders')}</DialogTitle>
           {/* <DialogDescription>
             Upload Excel files containing order data to import. Items with the same article number will be grouped together.
           </DialogDescription> */}
@@ -635,7 +639,7 @@ export function ImportOrdersModal({
                       value={headerTitle}
                       onChange={(e) => setHeaderTitle(e.target.value)}
                       className="w-[300]"
-                      placeholder="Enter title..."
+                      placeholder={t('orders.details.enterTitle')}
                     />
                     <div className="flex items-center gap-4">
                       <Button
@@ -645,7 +649,7 @@ export function ImportOrdersModal({
                         className="flex items-center gap-2"
                       >
                         <Printer className="h-4 w-4" />
-                        Print
+                        {t('common.print')}
                       </Button>
                       <Button
                         variant="outline"
@@ -654,7 +658,7 @@ export function ImportOrdersModal({
                         className="flex items-center gap-2"
                       >
                         <FileSpreadsheet className="h-4 w-4" />
-                        Excel
+                        {t('common.export.excel')}
                       </Button>
                       <Button
                         variant="outline"
@@ -663,7 +667,7 @@ export function ImportOrdersModal({
                         className="flex items-center gap-2"
                       >
                         <FileDown className="h-4 w-4" />
-                        PDF
+                        {t('common.export.pdf')}
                       </Button>
                     </div>
                   </div>
@@ -673,11 +677,19 @@ export function ImportOrdersModal({
                         <table className="min-w-[800px] w-full caption-bottom text-sm">
                           <thead>
                             <tr className="border rounded-md">
-                              <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Article Number</th>
-                              <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">Description</th>
-                              <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Kt</th>
-                              <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">Stk.</th>
-                              { filePreviews.map((preview, index) => (
+                              <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">
+                                {t('orders.details.articleNumber')}
+                              </th>
+                              <th className="h-10 border px-2 text-left align-middle font-medium whitespace-nowrap">
+                                {t('orders.details.description')}
+                              </th>
+                              <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">
+                                {t('orders.details.kt')}
+                              </th>
+                              <th className="h-10 border px-2 text-right align-middle font-medium whitespace-nowrap">
+                                {t('orders.details.stk')}
+                              </th>
+                              {filePreviews.map((preview, index) => (
                                 !disabledFiles.has(index) && (
                                   <th key={index} className="h-10 border rounded-md px-2 text-right align-middle font-medium whitespace-nowrap" style={{ width: '50px' }}>
                                     <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{preview.orderCode}</div>
@@ -749,8 +761,10 @@ export function ImportOrdersModal({
                     <AccordionItem value="original-files">
                       <AccordionTrigger className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span>Original Files</span>
-                          <span className="text-sm text-muted-foreground">({filePreviews.length} files)</span>
+                          <span>{t('orders.details.originalFiles')}</span>
+                          <span className="text-sm text-muted-foreground">
+                            ({filePreviews.length} {t('common.files')})
+                          </span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
@@ -781,8 +795,8 @@ export function ImportOrdersModal({
                                   </Button>
                                 </div>
                                 <div className="text-sm text-muted-foreground truncate">
-                                  Order: {preview.orderCode} • Customer: {preview.customerId}
-                                  {preview.date && ` • ${preview.date.toLocaleDateString('de-DE')}`}
+                                  {t('orders.details.order')}: {preview.orderCode} • {t('orders.details.customer')}: {preview.customerId}
+                                  {preview.date && ` • ${preview.date.toLocaleDateString(locale)}`}
                                 </div>
                               </div>
                             </div>
@@ -813,10 +827,10 @@ export function ImportOrdersModal({
                 onClick={() => onOpenChange(false)}
                 disabled={isLoading}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleImport} disabled={isLoading || selectedFiles.length === 0}>
-                {isLoading ? 'Importing...' : 'Import'}
+                {isLoading ? t('common.loading') : t('orders.importOrders')}
               </Button>
             </div>
           </div>
