@@ -20,6 +20,9 @@
 # production
 /build
 
+
+/import-orders-app
+
 # misc
 .DS_Store
 *.pem
