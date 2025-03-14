@@ -24,6 +24,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { parseNumber } from '@/lib/utils';
+import { EditableCell } from '../EditableCell';
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -587,6 +588,33 @@ export function ImportOrdersModal({
     }
   };
 
+  const handleCellEdit = (item: GroupedItem, field: string, value: string | number, fileIndex?: number) => {
+    if (field === 'articleNumber' || field === 'description') {
+      setGroupedItems(prev => {
+        const newItems = { ...prev };
+        const updatedItem = { ...newItems[item.articleNumber] };
+        updatedItem[field as keyof Pick<GroupedItem, 'articleNumber' | 'description'>] = value.toString();
+        newItems[item.articleNumber] = updatedItem;
+        return newItems;
+      });
+    } else if (field === 'quantity' && typeof fileIndex === 'number') {
+      // Update quantity in the specific file preview
+      setFilePreviews(prev => {
+        const newPreviews = [...prev];
+        const preview = { ...newPreviews[fileIndex] };
+        const itemIndex = preview.items.findIndex(i => i.articleNumber === item.articleNumber);
+        if (itemIndex !== -1) {
+          preview.items[itemIndex] = {
+            ...preview.items[itemIndex],
+            quantity: typeof value === 'number' ? value : parseFloat(value) || 0
+          };
+        }
+        newPreviews[fileIndex] = preview;
+        return newPreviews;
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[90vw] w-[90vw] max-h-[90vh] flex flex-col">
@@ -664,23 +692,48 @@ export function ImportOrdersModal({
                                 key={item.articleNumber}
                                 className="border transition-colors hover:bg-muted/50"
                               >
-                                <td className="p-2 border align-middle font-medium whitespace-nowrap" style={{ width: '20px' }}>{item.articleNumber}</td>
-                                <td className="p-2 border align-middle whitespace-nowrap" style={{ width: '200px' }} dangerouslySetInnerHTML={{ __html: showDescription(item.description) }}></td>
+                                <td className="p-2 border align-middle font-medium whitespace-nowrap" style={{ width: '20px' }}>
+                                  <EditableCell
+                                    value={item.articleNumber}
+                                    onSave={(value) => handleCellEdit(item, 'articleNumber', value)}
+                                    className="whitespace-nowrap"
+                                  />
+                                </td>
+                                <td className="p-2 border align-middle whitespace-nowrap" style={{ width: '200px' }}>
+                                  <EditableCell
+                                    value={item.description}
+                                    onSave={(value) => handleCellEdit(item, 'description', value)}
+                                    className="whitespace-nowrap"
+                                  />
+                                </td>
                                 <td className="p-2 border align-middle text-right whitespace-nowrap" style={{ width: '50px' }}>
                                   {item.totalQuantity2}
                                 </td>
                                 <td className="p-2 border align-middle text-right whitespace-nowrap" style={{ width: '50px' }}>
                                   {item.totalQuantity}
                                 </td>
-                                { filePreviews.map((preview, index) => (
-                                  !disabledFiles.has(index) && (<td key={index} className="p-2 border bg-muted/50 text-muted-foreground align-middle text-right whitespace-nowrap" dangerouslySetInnerHTML={{ __html:
-                                          preview.items
-                                            .filter((item1) => item.articleNumber === item1.articleNumber)
-                                            .map((item) => (
-                                              `${item.quantity}${item.quantity2 > 0 ? ` <br/><span style="font-size: 12px; color: gray;">${item.quantity2} Kt</span>` : ''}`
-                                            ))
-                                        }}>
-                                  </td>)                           
+                                {filePreviews.map((preview, index) => (
+                                  !disabledFiles.has(index) && (
+                                    <td key={index} className="p-2 border bg-muted/50 text-muted-foreground align-middle text-right whitespace-nowrap">
+                                      {preview.items
+                                        .filter((item1) => item.articleNumber === item1.articleNumber)
+                                        .map((fileItem) => (
+                                          <div key={`${index}-${item.articleNumber}`}>
+                                            <EditableCell
+                                              value={fileItem.quantity}
+                                              type="number"
+                                              onSave={(value) => handleCellEdit(item, 'quantity', value, index)}
+                                              className="text-right"
+                                            />
+                                            {fileItem.quantity2 > 0 && (
+                                              <span className="text-xs text-gray-500 block">
+                                                {fileItem.quantity2} Kt
+                                              </span>
+                                            )}
+                                          </div>
+                                        ))}
+                                    </td>
+                                  )
                                 ))}
                               </tr>
                             ))}
